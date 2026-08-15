@@ -2,16 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\WeeklyPlan;
 use App\Models\PlanScore;
+use App\Models\WeeklyPlan;
 
 class ScoreCalculatorService
 {
     /**
      * Calculate the score for a weekly plan.
-     *
-     * @param WeeklyPlan $plan
-     * @return PlanScore
      */
     public function calculate(WeeklyPlan $plan): PlanScore
     {
@@ -30,9 +27,6 @@ class ScoreCalculatorService
 
     /**
      * Get base score according to status.
-     *
-     * @param string $status
-     * @return int
      */
     private function getBaseScore(string $status): int
     {
@@ -47,9 +41,6 @@ class ScoreCalculatorService
 
     /**
      * Get multiplier according to impact level.
-     *
-     * @param string $impactLevel
-     * @return float
      */
     private function getMultiplier(string $impactLevel): float
     {

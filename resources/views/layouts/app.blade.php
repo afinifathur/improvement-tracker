@@ -5,7 +5,7 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>@yield('title', 'Kaizen Tracker')</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <script id="tailwind-config">
         tailwind.config = {
@@ -13,64 +13,24 @@
             theme: {
                 extend: {
                     colors: {
-                        "tertiary": "#546168",
-                        "error": "#9f403d",
-                        "on-background": "#2a3437",
-                        "secondary-container": "#cfe6f2",
-                        "on-primary": "#f6f7ff",
-                        "on-primary-fixed-variant": "#005ab1",
-                        "surface-container-high": "#e1eaec",
-                        "on-secondary": "#f2faff",
+                        "primary": "#0058be",
+                        "secondary": "#0058be",
+                        "tertiary-fixed": "#fadfb8",
+                        "on-secondary-fixed-variant": "#004395",
                         "background": "#f8fafb",
-                        "primary-container": "#d6e3ff",
-                        "primary": "#005db6",
-                        "surface-dim": "#cfdce0",
-                        "tertiary-container": "#e6f3fb",
-                        "surface": "#f8fafb",
-                        "on-primary-container": "#00519f",
-                        "on-tertiary-container": "#505c62",
-                        "error-container": "#fe8983",
-                        "outline": "#727d80",
-                        "secondary-fixed": "#cfe6f2",
+                        "surface": "#ffffff",
+                        "error": "#9f403d",
+                        // MD3 Tokens for backward compatibility
                         "surface-container-low": "#f0f4f6",
-                        "primary-fixed": "#d6e3ff",
-                        "surface-container-lowest": "#ffffff",
-                        "tertiary-dim": "#49555b",
-                        "tertiary-fixed-dim": "#d7e4ec",
-                        "on-secondary-fixed-variant": "#495f69",
-                        "primary-dim": "#0051a1",
+                        "surface-container-high": "#e1eaec",
                         "on-surface-variant": "#566164",
-                        "inverse-primary": "#609efc",
-                        "on-primary-fixed": "#003e7e",
-                        "surface-variant": "#d9e4e8",
-                        "on-error-container": "#752121",
-                        "on-tertiary": "#f3faff",
-                        "on-secondary-fixed": "#2d424c",
-                        "on-tertiary-fixed": "#3e4a50",
-                        "surface-container": "#e8eff1",
-                        "surface-tint": "#005db6",
-                        "error-dim": "#4e0309",
-                        "inverse-on-surface": "#9a9d9e",
-                        "tertiary-fixed": "#e6f3fb",
-                        "outline-variant": "#a9b4b7",
-                        "secondary-dim": "#415660",
-                        "on-secondary-container": "#40555f",
-                        "primary-fixed-dim": "#c0d5ff",
                         "inverse-surface": "#0b0f10",
                         "on-surface": "#2a3437",
-                        "surface-container-highest": "#d9e4e8",
-                        "secondary-fixed-dim": "#c1d8e4",
-                        "on-tertiary-fixed-variant": "#5a666d",
-                        "on-error": "#fff7f6",
-                        "surface-bright": "#f8fafb",
-                        "secondary": "#4d626c"
+                        "outline-variant": "#a9b4b7"
                     },
                     fontFamily: {
-                        "headline": ["Inter"],
-                        "body": ["Inter"],
-                        "label": ["Inter"]
+                        "sans": ["Inter", "sans-serif"],
                     },
-                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
                 },
             },
         }
@@ -80,85 +40,308 @@
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             vertical-align: middle;
         }
-        body { font-family: 'Inter', sans-serif; }
-        .row-interactive:hover { background-color: #f1f5f9; cursor: pointer; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for high-density Notion sidebar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ---------------------------------------------------- */
+        /* REUSABLE UI PRIMITIVES (High Density Industrial)     */
+        /* ---------------------------------------------------- */
+
+        /* Reusable Table Primitives */
+        .table-container {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .table-dense {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 11px;
+        }
+        .table-dense th {
+            background-color: #f8fafb;
+            border-bottom: 1px solid #e2e8f0;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 6px 12px;
+        }
+        .table-dense td {
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            padding: 8px 12px;
+            vertical-align: middle;
+        }
+        .table-dense tr:last-child td {
+            border-bottom: none;
+        }
+        .table-dense tbody tr:hover {
+            background-color: #f8fafb;
+            cursor: pointer;
+        }
+
+        /* Reusable Status Badges */
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 9999px;
+            border-width: 1px;
+        }
+        .badge-not-started {
+            background-color: #f1f5f9;
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+        .badge-in-progress {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+        .badge-blocked {
+            background-color: #fffbeb;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+        .badge-completed {
+            background-color: #f0fdf4;
+            color: #15803d;
+            border-color: #bbf7d0;
+        }
+        .badge-cancelled {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .badge-open {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .badge-resolved {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #bfdbfe;
+        }
+        .badge-closed {
+            background-color: #f1f5f9;
+            color: #475569;
+            border-color: #cbd5e1;
+        }
+
+        /* Reusable Filter Controls */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 2px;
+            padding: 6px 12px;
+            font-size: 11px;
+        }
+        .filter-control {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 2px;
+            padding: 3px 8px;
+            font-size: 11px;
+            outline: none;
+            transition: border-color 0.15s ease-in-out;
+        }
+        .filter-control:focus {
+            border-color: #0058be;
+            box-shadow: 0 0 0 1px #0058be;
+        }
     </style>
+    @yield('head')
 </head>
 <body class="bg-background text-on-surface antialiased flex min-h-screen">
 
 <!-- SideNavBar -->
-<aside class="flex flex-col sticky top-0 h-screen w-64 border-r border-slate-200 bg-white font-['Inter'] antialiased text-sm font-medium">
-    <div class="px-6 py-6">
-        <div class="flex items-center gap-3 mb-8">
-            <div class="w-7 h-7 bg-primary flex items-center justify-center rounded-sm">
-                <span class="material-symbols-outlined text-white text-base">precision_manufacturing</span>
+<aside class="flex flex-col fixed top-0 left-0 h-screen w-[240px] border-r border-slate-200 bg-white text-xs font-medium z-30 select-none">
+    <!-- Header -->
+    <div class="p-4 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+            <div class="w-6 h-6 bg-secondary flex items-center justify-center rounded">
+                <span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
             </div>
-            <div>
-                <h1 class="text-base font-bold tracking-tight text-slate-900">Kaizen Tracker</h1>
-                <p class="text-[9px] uppercase tracking-widest text-slate-500">Industrial Precision</p>
+            <div class="min-w-0">
+                <h1 class="text-sm font-bold text-slate-800 leading-none truncate">Kaizen Tracker</h1>
+                <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-400 mt-1 truncate">PT. Peroni Karya Sentra</p>
             </div>
         </div>
-        <nav class="space-y-1">
-            <a class="flex items-center gap-3 px-3 py-1.5 {{ request()->routeIs('dashboard') ? 'text-blue-700 font-bold border-r-2 border-blue-700 bg-blue-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors' }}" href="{{ route('dashboard') }}">
-                <span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard
-            </a>
-
-            @if(auth()->user()->isAdmin())
-            <a class="flex items-center gap-3 px-3 py-1.5 {{ request()->routeIs('weekly-plans.create') ? 'text-blue-700 font-bold border-r-2 border-blue-700 bg-blue-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors' }}" href="{{ route('weekly-plans.create') }}">
-                <span class="material-symbols-outlined text-[20px]">calendar_view_week</span> Weekly Plan
-            </a>
-            <a class="flex items-center gap-3 px-3 py-1.5 {{ request()->routeIs('weekly-plans.closing') ? 'text-blue-700 font-bold border-r-2 border-blue-700 bg-blue-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors' }}" href="{{ route('weekly-plans.closing') }}">
-                <span class="material-symbols-outlined text-[20px]">assignment_turned_in</span> Closing
-            </a>
-            @endif
-
-            <a class="flex items-center gap-3 px-3 py-1.5 {{ request()->routeIs('rankings') ? 'text-blue-700 font-bold border-r-2 border-blue-700 bg-blue-50/50' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors' }}" href="{{ route('rankings') }}">
-                <span class="material-symbols-outlined text-[20px]">leaderboard</span> Ranking
-            </a>
-        </nav>
-        @if(auth()->user()->isAdmin())
-        <div class="mt-8">
-            <a href="{{ route('weekly-plans.create') }}" class="block w-full bg-primary text-white py-2 rounded-sm font-bold text-[11px] tracking-wide hover:bg-primary-dim transition-all text-center">
-                NEW IMPROVEMENT
-            </a>
-        </div>
-        @endif
     </div>
-    <div class="mt-auto px-6 py-6 border-t border-slate-100">
-        <nav class="space-y-1">
-            <form action="{{ route('logout') }}" method="POST" id="logout-form" class="hidden">@csrf</form>
-            <a class="flex items-center gap-3 px-3 py-1 text-slate-500 hover:text-red-600 transition-colors cursor-pointer" onclick="document.getElementById('logout-form').submit()">
-                <span class="material-symbols-outlined text-[18px]">logout</span> Logout
-            </a>
-        </nav>
-        <div class="flex items-center gap-3 mt-4 px-3">
-            <img alt="User Profile Avatar" class="w-7 h-7 rounded-full object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'User') }}&background=005db6&color=fff"/>
-            <div class="overflow-hidden">
-                <p class="text-[11px] font-bold truncate text-slate-900">{{ auth()->user()->name ?? 'Guest' }}</p>
+
+    <!-- Quick Action / New Item (if admin) -->
+    @if(auth()->user()->isAdmin())
+    <div class="p-3 border-b border-slate-100 bg-slate-50/50">
+        <a href="{{ route('weekly-plans.create') }}" class="flex items-center justify-center gap-1.5 w-full bg-secondary text-white py-1.5 rounded text-[11px] font-bold tracking-wide hover:brightness-110 active:scale-[0.98] transition-all shadow-sm">
+            <span class="material-symbols-outlined text-sm font-bold">add</span>
+            NEW PLAN
+        </a>
+    </div>
+    @endif
+
+    <!-- Navigation Scroll Area -->
+    <div class="flex-1 overflow-y-auto p-3 space-y-4">
+        <!-- Section: Views -->
+        <div>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">VIEWS</span>
+            <nav class="space-y-0.5">
+                <a href="{{ Route::has('work-items.today') ? route('work-items.today') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.today') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">today</span>
+                        <span>Today</span>
+                    </div>
+                </a>
+                <a href="{{ Route::has('work-items.this-week') ? route('work-items.this-week') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.this-week') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">calendar_view_week</span>
+                        <span>This Week</span>
+                    </div>
+                </a>
+                <a href="{{ Route::has('work-items.plan') ? route('work-items.plan') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.plan') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">assignment</span>
+                        <span>Plan</span>
+                    </div>
+                </a>
+                <a href="{{ Route::has('work-items.progress') ? route('work-items.progress') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.progress') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">trending_up</span>
+                        <span>Progress</span>
+                    </div>
+                </a>
+                <a href="{{ Route::has('work-items.overdue') ? route('work-items.overdue') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.overdue') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">warning</span>
+                        <span>Overdue</span>
+                    </div>
+                </a>
+                <a href="{{ Route::has('work-items.completed') ? route('work-items.completed') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.completed') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span>Completed</span>
+                    </div>
+                </a>
+                <a href="{{ route('work-items.calendar') }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.calendar') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                        <span>Calendar</span>
+                    </div>
+                </a>
+                <a href="{{ route('issues.index') }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('issues.index') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">error</span>
+                        <span>Issues</span>
+                    </div>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Section: Slices -->
+        <div>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">SLICES</span>
+            <nav class="space-y-0.5">
+                <a href="{{ route('work-items.person') }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.person') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">person</span>
+                    <span>Person</span>
+                </a>
+                <a href="{{ route('work-items.area') }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.area') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">precision_manufacturing</span>
+                    <span>Area</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Section: Operations -->
+        <div>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">OPERATIONS</span>
+            <nav class="space-y-0.5">
+                @if(auth()->user()->isAdmin() || auth()->user()->role === 'director')
+                <a href="{{ Route::has('daily-reports.index') ? route('daily-reports.index') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('daily-reports.*') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">rule_folder</span>
+                    <span>Control Center</span>
+                </a>
+                @endif
+                <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('dashboard') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">space_dashboard</span>
+                    <span>Weekly Plan</span>
+                </a>
+                @if(auth()->user()->isAdmin())
+                <a href="{{ Route::has('weekly-plans.closing') ? route('weekly-plans.closing') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('weekly-plans.closing') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
+                    <span>Closing</span>
+                </a>
+                @endif
+                <a href="{{ Route::has('rankings') ? route('rankings') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('rankings') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">leaderboard</span>
+                    <span>Ranking</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-3 border-t border-slate-200 bg-slate-50/50 mt-auto">
+        <div class="flex items-center gap-2 px-1">
+            <img alt="User Avatar" class="w-6 h-6 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'User') }}&background=0058be&color=fff"/>
+            <div class="min-w-0 flex-1">
+                <p class="text-[10px] font-bold text-slate-700 truncate leading-normal">{{ auth()->user()->name ?? 'Guest' }}</p>
+                <p class="text-[8px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ auth()->user()->role ?? 'Operator' }}</p>
             </div>
+            <form action="{{ route('logout') }}" method="POST" id="logout-form" class="hidden">@csrf</form>
+            <a onclick="document.getElementById('logout-form').submit()" class="text-slate-400 hover:text-red-600 cursor-pointer flex items-center shrink-0">
+                <span class="material-symbols-outlined text-[16px]">logout</span>
+            </a>
         </div>
     </div>
 </aside>
 
-<main class="flex-1 flex flex-col min-w-0">
-    <header class="flex justify-between items-center w-full px-8 py-3 sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="flex items-center flex-1 max-w-xl">
-            <div class="relative w-full">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
-                <input class="w-full bg-transparent border-none focus:ring-0 text-sm py-1 pl-10 pr-4 outline-none" placeholder="Search metrics..." type="text"/>
-            </div>
-        </div>
-        <div class="flex items-center gap-4 ml-6">
-            <button class="p-1.5 text-slate-400 hover:text-primary transition-all">
-                <span class="material-symbols-outlined text-xl">notifications</span>
-            </button>
-            <div class="h-4 w-[1px] bg-slate-200"></div>
-            <button class="px-3 py-1 bg-slate-100 text-on-surface font-bold text-[10px] uppercase tracking-widest hover:bg-slate-200">
-                {{ auth()->user()->role ?? 'ADMIN' }}
-            </button>
-        </div>
-    </header>
+<!-- Top App Bar -->
+<header class="flex justify-between items-center fixed top-0 left-[240px] right-0 h-[40px] px-4 bg-white/95 backdrop-blur border-b border-slate-200 z-20 select-none">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-slate-400 text-base">search</span>
+        <input type="text" placeholder="Search datasets..." class="w-48 bg-transparent border-none text-xs outline-none focus:ring-0 placeholder-slate-400 p-0"/>
+    </div>
+    <div class="flex items-center gap-3">
+        <button class="text-slate-400 hover:text-slate-600 flex items-center">
+            <span class="material-symbols-outlined text-base">notifications</span>
+        </button>
+        <div class="h-3 w-[1px] bg-slate-200"></div>
+        <span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+            {{ auth()->user()->role ?? 'ADMIN' }}
+        </span>
+    </div>
+</header>
 
+<!-- Main content area -->
+<main class="flex-1 min-w-0 ml-[240px] pt-[40px] min-h-screen bg-background">
     @yield('content')
 </main>
 

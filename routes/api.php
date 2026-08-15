@@ -1,9 +1,8 @@
 <?php
 
+use App\Http\Controllers\WeeklyPlanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\WeeklyPlanController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/weekly-plans', [WeeklyPlanController::class, 'store']);

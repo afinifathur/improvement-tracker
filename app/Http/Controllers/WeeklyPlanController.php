@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreWeeklyPlanRequest;
 use App\Http\Requests\UpdateWeeklyStatusRequest;
+use App\Models\User;
 use App\Models\WeeklyPlan;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class WeeklyPlanController extends Controller
 {
@@ -27,25 +27,26 @@ class WeeklyPlanController extends Controller
             ->avg('final_score') ?? 0;
 
         $performanceData = User::where('role', 'spv')
-            ->withCount(['weeklyPlans as total' => function($q) use ($startOfWeek, $endOfWeek) {
+            ->withCount(['weeklyPlans as total' => function ($q) use ($startOfWeek, $endOfWeek) {
                 $q->whereBetween('week_start_date', [$startOfWeek, $endOfWeek]);
             }])
-            ->withCount(['weeklyPlans as completed' => function($q) use ($startOfWeek, $endOfWeek) {
+            ->withCount(['weeklyPlans as completed' => function ($q) use ($startOfWeek, $endOfWeek) {
                 $q->whereBetween('week_start_date', [$startOfWeek, $endOfWeek])->where('status', 'completed');
             }])
             ->get()
-            ->map(function($user) use ($startOfWeek, $endOfWeek) {
+            ->map(function ($user) use ($startOfWeek, $endOfWeek) {
                 $user->rate = $user->total > 0 ? round(($user->completed / $user->total) * 100) : 0;
                 $user->avg_score = WeeklyPlan::join('plan_scores', 'weekly_plans.id', '=', 'plan_scores.weekly_plan_id')
                     ->where('user_id', $user->id)
                     ->whereBetween('week_start_date', [$startOfWeek, $endOfWeek])
                     ->avg('final_score') ?? 0;
-                return (object)[
+
+                return (object) [
                     'user' => $user,
                     'total' => $user->total,
                     'completed' => $user->completed,
                     'rate' => $user->rate,
-                    'avg_score' => $user->avg_score
+                    'avg_score' => $user->avg_score,
                 ];
             });
 
@@ -60,6 +61,7 @@ class WeeklyPlanController extends Controller
     public function create()
     {
         $supervisors = User::where('role', 'spv')->get();
+
         return view('weekly-plans.create', compact('supervisors'));
     }
 
@@ -73,7 +75,7 @@ class WeeklyPlanController extends Controller
             ->orderBy('status', 'asc')
             ->get();
 
-        $stats = (object)[
+        $stats = (object) [
             'total' => $plans->count(),
             'completed' => $plans->where('status', 'completed')->count(),
             'pending' => $plans->where('status', 'planned')->count(),
@@ -87,7 +89,7 @@ class WeeklyPlanController extends Controller
     {
         $rankings = User::where('role', 'spv')
             ->get()
-            ->map(function($user) {
+            ->map(function ($user) {
                 $plans = WeeklyPlan::where('user_id', $user->id)->get();
                 $totalPlans = $plans->count();
                 $completedPlans = $plans->where('status', 'completed')->count();
@@ -95,7 +97,7 @@ class WeeklyPlanController extends Controller
                     ->where('user_id', $user->id)
                     ->sum('final_score');
 
-                return (object)[
+                return (object) [
                     'user' => $user,
                     'total_score' => $totalScore,
                     'total_plans' => $totalPlans,
@@ -110,7 +112,7 @@ class WeeklyPlanController extends Controller
             ->groupBy('category')
             ->get()
             ->pluck('total', 'category')
-            ->map(function($total) use ($totalLogs) {
+            ->map(function ($total) use ($totalLogs) {
                 return $totalLogs > 0 ? round(($total / $totalLogs) * 100) : 0;
             });
 
@@ -126,7 +128,7 @@ class WeeklyPlanController extends Controller
 
         return response()->json([
             'message' => 'Weekly plan created successfully.',
-            'data' => $plan->load('user')
+            'data' => $plan->load('user'),
         ], 201);
     }
 
@@ -139,7 +141,7 @@ class WeeklyPlanController extends Controller
             // Update basic fields
             $plan->status = $request->status;
             $plan->notes = $request->notes;
-            
+
             if ($request->has('category_corrected')) {
                 $plan->category_corrected = $request->category_corrected;
             }
@@ -150,7 +152,7 @@ class WeeklyPlanController extends Controller
             if ($request->hasFile('proofs')) {
                 foreach ($request->file('proofs') as $file) {
                     $path = $file->store('proofs', 'public');
-                    
+
                     $plan->proofs()->create([
                         'file_path' => $path,
                         'file_type' => $file->getClientOriginalExtension(),
@@ -160,7 +162,7 @@ class WeeklyPlanController extends Controller
 
             return response()->json([
                 'message' => 'Weekly plan status updated and score calculated.',
-                'data' => $plan->load(['proofs', 'score'])
+                'data' => $plan->load(['proofs', 'score']),
             ]);
         });
     }

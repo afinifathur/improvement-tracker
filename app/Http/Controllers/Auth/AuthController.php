@@ -13,6 +13,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return $this->redirectBasedOnRole(Auth::user());
         }
+
         return view('auth.login');
     }
 
@@ -45,8 +46,8 @@ class AuthController extends Controller
 
     protected function redirectBasedOnRole($user)
     {
-        if ($user->isAdmin()) {
-            return redirect()->intended('/weekly-plan/closing');
+        if ($user->isAdmin() || $user->role === 'director') {
+            return redirect()->intended('/daily-reports');
         }
 
         if ($user->isManager()) {

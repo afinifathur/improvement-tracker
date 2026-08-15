@@ -2,36 +2,40 @@
 
 namespace Database\Seeders;
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class AuthUserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // 1. Admin
+        $ppic = Department::where('code', 'PPIC')->first();
+        $qaqc = Department::where('code', 'QA-QC')->first();
+        $prdFl = Department::where('code', 'PRD-FL')->first();
+
+        // 1. Admin (PPIC)
         User::updateOrCreate(
             ['email' => 'adminppic@peroniks.com'],
             [
                 'name' => 'Admin PPIC',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
-                'department_name' => 'PPIC',
+                'department_id' => $ppic?->id,
+                'department_name' => $ppic?->name,
             ]
         );
 
-        // 2. Manager
+        // 2. Management Representative (Manager)
         User::updateOrCreate(
             ['email' => 'mr@peroniks.com'],
             [
                 'name' => 'MR Manager',
                 'password' => Hash::make('password123'),
                 'role' => 'manager',
-                'department_name' => 'Management',
+                'department_id' => $qaqc?->id,
+                'department_name' => $qaqc?->name,
             ]
         );
 
@@ -41,8 +45,33 @@ class AuthUserSeeder extends Seeder
             [
                 'name' => 'Direktur Utama',
                 'password' => Hash::make('peronijayajaya123'),
-                'role' => 'manager', // User specified 'role: manager' in the requirement for Director
-                'department_name' => 'Board',
+                'role' => 'director',
+                'department_id' => null,
+                'department_name' => null,
+            ]
+        );
+
+        // 4. System Admin (kaizen)
+        User::updateOrCreate(
+            ['email' => 'admin@kaizen.com'],
+            [
+                'name' => 'System Admin',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'department_id' => null,
+                'department_name' => null,
+            ]
+        );
+
+        // 5. Legacy Supervisor A
+        User::updateOrCreate(
+            ['email' => 'spv_a@kaizen.com'],
+            [
+                'name' => 'Supervisor A',
+                'password' => Hash::make('password'),
+                'role' => 'spv',
+                'department_id' => $prdFl?->id,
+                'department_name' => $prdFl?->name,
             ]
         );
     }

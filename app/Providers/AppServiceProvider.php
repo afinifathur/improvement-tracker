@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\WeeklyPlan;
+use App\Observers\WeeklyPlanObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -16,6 +18,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        \App\Models\WeeklyPlan::observe(\App\Observers\WeeklyPlanObserver::class);
+        WeeklyPlan::observe(WeeklyPlanObserver::class);
     }
 }
