@@ -66,7 +66,7 @@ class LoginAndNavigationTest extends TestCase
         $this->user('spv', 'spv@example.com');
 
         $this->actingAs($manager)
-            ->get(route('dashboard'))
+            ->get(route('dashboard.index'))
             ->assertOk()
             ->assertDontSee(route('daily-reports.index'), false);
     }
@@ -76,7 +76,7 @@ class LoginAndNavigationTest extends TestCase
         $admin = $this->user('admin', 'admin@example.com');
         $this->user('spv', 'spv@example.com');
 
-        $this->actingAs($admin)->get(route('dashboard'))->assertOk();
+        $this->actingAs($admin)->get(route('dashboard'))->assertRedirect(route('dashboard.index'));
         $this->actingAs($admin)->get(route('rankings'))->assertOk();
         $this->actingAs($admin)->get(route('weekly-plans.create'))->assertOk();
         $this->actingAs($admin)->get(route('weekly-plans.closing'))->assertOk();

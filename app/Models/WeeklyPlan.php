@@ -48,6 +48,11 @@ class WeeklyPlan extends Model
         return $this->hasMany(PlanProof::class);
     }
 
+    public function workItems(): HasMany
+    {
+        return $this->hasMany(WorkItem::class);
+    }
+
     /**
      * Get the score associated with the weekly plan.
      */

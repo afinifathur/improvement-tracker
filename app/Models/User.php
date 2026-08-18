@@ -54,6 +54,16 @@ class User extends Authenticatable
             ->withPivot('role', 'started_at', 'ended_at');
     }
 
+    /**
+     * Real operational personnel: users holding at least one organizational
+     * assignment. Excludes system/authentication accounts that have no area
+     * assignment (admin, director, management representative, etc.).
+     */
+    public function scopeOperationalPersonnel($query)
+    {
+        return $query->whereHas('areaAssignments');
+    }
+
     public function dailyReports(): HasMany
     {
         return $this->hasMany(DailyReport::class, 'reported_by');

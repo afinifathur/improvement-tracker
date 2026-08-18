@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Area;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\WeeklyPlan;
 use App\Models\WorkItem;
+use App\Models\WorkItemScheduleChange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -21,7 +23,7 @@ class WorkItemController extends Controller
         $users = User::orderBy('name')->get();
 
         // Base query with filters
-        $baseQuery = WorkItem::query()->with(['owner', 'department', 'area']);
+        $baseQuery = WorkItem::query()->with(['owner', 'department', 'area', 'weeklyPlan']);
 
         if ($search = $request->input('search')) {
             $baseQuery->where(function ($q) use ($search) {
@@ -207,6 +209,27 @@ class WorkItemController extends Controller
         // Group by area_id (stable identity)
         $groupedItems = $classifiedItems->groupBy('area_id');
 
+        // Fetch Weekly Plans for this week
+        $weeklyPlansQuery = WeeklyPlan::whereDate('week_start_date', $weekStart)->with(['user']);
+        if ($request->filled('owner_id')) {
+            $weeklyPlansQuery->where('user_id', $request->input('owner_id'));
+        }
+        if ($request->filled('department_id')) {
+            $weeklyPlansQuery->whereHas('user', function ($q) use ($request) {
+                $q->where('department_id', $request->input('department_id'));
+            });
+        }
+        $weeklyPlans = $weeklyPlansQuery->get();
+
+        // Group all week items by weekly_plan_id
+        $linkedItemsGrouped = WorkItem::whereIn('weekly_plan_id', $weeklyPlans->pluck('id'))
+            ->with(['owner', 'department', 'area'])
+            ->get()
+            ->groupBy('weekly_plan_id');
+
+        // Independent items (weekly_plan_id is null) grouped by area
+        $independentGrouped = $classifiedItems->where('weekly_plan_id', null)->groupBy('area_id');
+
         return view('work-items.this-week', compact(
             'date',
             'weekStart',
@@ -216,7 +239,10 @@ class WorkItemController extends Controller
             'areas',
             'users',
             'summary',
-            'groupedItems'
+            'groupedItems',
+            'weeklyPlans',
+            'linkedItemsGrouped',
+            'independentGrouped'
         ));
     }
 
@@ -806,5 +832,92 @@ class WorkItemController extends Controller
         }
 
         return now()->toDateString();
+    }
+
+    public function updateStatus(Request $request, WorkItem $item)
+    {
+        $request->validate([
+            'status' => 'required|in:not_started,in_progress,blocked,completed,cancelled',
+            'blocked_reason' => 'nullable|string',
+            'blocked_reason_note' => 'nullable|string',
+            'blocked_by_department_id' => 'nullable|exists:departments,id',
+            'cancel_reason' => 'nullable|string',
+            'cancel_reason_note' => 'nullable|string',
+        ]);
+
+        $status = $request->input('status');
+        $updateData = [
+            'status' => $status,
+            'updated_by' => auth()->id(),
+        ];
+
+        if ($status === 'completed') {
+            $updateData['completed_at'] = now();
+        } else {
+            $updateData['completed_at'] = null;
+        }
+
+        if ($status === 'blocked') {
+            $updateData['blocked_at'] = now();
+            $updateData['blocked_reason'] = $request->input('blocked_reason');
+            $updateData['blocked_reason_note'] = $request->input('blocked_reason_note');
+            $updateData['blocked_by_department_id'] = $request->input('blocked_by_department_id');
+        } else {
+            $updateData['blocked_at'] = null;
+            $updateData['blocked_reason'] = null;
+            $updateData['blocked_reason_note'] = null;
+            $updateData['blocked_by_department_id'] = null;
+        }
+
+        if ($status === 'cancelled') {
+            $updateData['cancel_reason'] = $request->input('cancel_reason');
+            $updateData['cancel_reason_note'] = $request->input('cancel_reason_note');
+        } else {
+            $updateData['cancel_reason'] = null;
+            $updateData['cancel_reason_note'] = null;
+        }
+
+        $item->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status berhasil diperbarui.',
+            'item' => $item->fresh(['owner', 'department', 'area', 'weeklyPlan']),
+        ]);
+    }
+
+    public function extend(Request $request, WorkItem $item)
+    {
+        $request->validate([
+            'new_end_date' => 'required|date|after_or_equal:planned_start_date',
+            'reason' => 'required|string|max:255',
+            'reason_note' => 'nullable|string',
+        ]);
+
+        $oldEndDate = $item->planned_end_date;
+        $newEndDate = Carbon::parse($request->input('new_end_date'));
+
+        WorkItemScheduleChange::create([
+            'work_item_id' => $item->id,
+            'old_start_date' => $item->planned_start_date,
+            'old_end_date' => $oldEndDate,
+            'new_start_date' => $item->planned_start_date,
+            'new_end_date' => $newEndDate,
+            'reason' => $request->input('reason'),
+            'reason_note' => $request->input('reason_note'),
+            'changed_by' => auth()->id(),
+            'changed_at' => now(),
+        ]);
+
+        $item->update([
+            'planned_end_date' => $newEndDate,
+            'updated_by' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pekerjaan berhasil diperpanjang.',
+            'item' => $item->fresh(['owner', 'department', 'area', 'weeklyPlan']),
+        ]);
     }
 }

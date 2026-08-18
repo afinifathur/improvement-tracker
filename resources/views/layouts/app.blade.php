@@ -202,7 +202,7 @@
     <div class="p-3 border-b border-slate-100 bg-slate-50/50">
         <a href="{{ route('weekly-plans.create') }}" class="flex items-center justify-center gap-1.5 w-full bg-secondary text-white py-1.5 rounded text-[11px] font-bold tracking-wide hover:brightness-110 active:scale-[0.98] transition-all shadow-sm">
             <span class="material-symbols-outlined text-sm font-bold">add</span>
-            NEW PLAN
+            RENCANA BARU
         </a>
     </div>
     @endif
@@ -211,54 +211,60 @@
     <div class="flex-1 overflow-y-auto p-3 space-y-4">
         <!-- Section: Views -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">VIEWS</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">TAMPILAN</span>
             <nav class="space-y-0.5">
+                <a href="{{ Route::has('dashboard.index') ? route('dashboard.index') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('dashboard.index') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-[18px]">monitoring</span>
+                        <span>Dashboard</span>
+                    </div>
+                </a>
                 <a href="{{ Route::has('work-items.today') ? route('work-items.today') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.today') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">today</span>
-                        <span>Today</span>
+                        <span>Hari Ini</span>
                     </div>
                 </a>
                 <a href="{{ Route::has('work-items.this-week') ? route('work-items.this-week') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.this-week') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">calendar_view_week</span>
-                        <span>This Week</span>
+                        <span>Minggu Ini</span>
                     </div>
                 </a>
                 <a href="{{ Route::has('work-items.plan') ? route('work-items.plan') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.plan') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">assignment</span>
-                        <span>Plan</span>
+                        <span>Rencana</span>
                     </div>
                 </a>
                 <a href="{{ Route::has('work-items.progress') ? route('work-items.progress') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.progress') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">trending_up</span>
-                        <span>Progress</span>
+                        <span>Sedang Berjalan</span>
                     </div>
                 </a>
                 <a href="{{ Route::has('work-items.overdue') ? route('work-items.overdue') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.overdue') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">warning</span>
-                        <span>Overdue</span>
+                        <span>Terlambat</span>
                     </div>
                 </a>
                 <a href="{{ Route::has('work-items.completed') ? route('work-items.completed') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.completed') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Completed</span>
+                        <span>Selesai</span>
                     </div>
                 </a>
                 <a href="{{ route('work-items.calendar') }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.calendar') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-                        <span>Calendar</span>
+                        <span>Kalender</span>
                     </div>
                 </a>
                 <a href="{{ route('issues.index') }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('issues.index') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
                         <span class="material-symbols-outlined text-[18px]">error</span>
-                        <span>Issues</span>
+                        <span>Kendala</span>
                     </div>
                 </a>
             </nav>
@@ -266,11 +272,11 @@
 
         <!-- Section: Slices -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">SLICES</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">ANALISIS</span>
             <nav class="space-y-0.5">
                 <a href="{{ route('work-items.person') }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.person') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">person</span>
-                    <span>Person</span>
+                    <span>Personel</span>
                 </a>
                 <a href="{{ route('work-items.area') }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.area') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">precision_manufacturing</span>
@@ -281,27 +287,27 @@
 
         <!-- Section: Operations -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">OPERATIONS</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">OPERASI</span>
             <nav class="space-y-0.5">
                 @if(auth()->user()->isAdmin() || auth()->user()->role === 'director')
                 <a href="{{ Route::has('daily-reports.index') ? route('daily-reports.index') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('daily-reports.*') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">rule_folder</span>
-                    <span>Control Center</span>
+                    <span>Pusat Kendali</span>
                 </a>
                 @endif
                 <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('dashboard') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">space_dashboard</span>
-                    <span>Weekly Plan</span>
+                    <span>Rencana Mingguan</span>
                 </a>
                 @if(auth()->user()->isAdmin())
                 <a href="{{ Route::has('weekly-plans.closing') ? route('weekly-plans.closing') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('weekly-plans.closing') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
-                    <span>Closing</span>
+                    <span>Penutupan</span>
                 </a>
                 @endif
                 <a href="{{ Route::has('rankings') ? route('rankings') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('rankings') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">leaderboard</span>
-                    <span>Ranking</span>
+                    <span>Peringkat</span>
                 </a>
             </nav>
         </div>
@@ -313,7 +319,7 @@
             <img alt="User Avatar" class="w-6 h-6 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'User') }}&background=0058be&color=fff"/>
             <div class="min-w-0 flex-1">
                 <p class="text-[10px] font-bold text-slate-700 truncate leading-normal">{{ auth()->user()->name ?? 'Guest' }}</p>
-                <p class="text-[8px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ auth()->user()->role ?? 'Operator' }}</p>
+                <p class="text-[8px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ match(auth()->user()->role ?? 'spv') { 'admin' => 'Admin', 'director' => 'Direktur', 'manager' => 'Manager', 'kabag' => 'Kabag', 'spv' => 'SPV', default => auth()->user()->role } }}</p>
             </div>
             <form action="{{ route('logout') }}" method="POST" id="logout-form" class="hidden">@csrf</form>
             <a onclick="document.getElementById('logout-form').submit()" class="text-slate-400 hover:text-red-600 cursor-pointer flex items-center shrink-0">
@@ -327,7 +333,7 @@
 <header class="flex justify-between items-center fixed top-0 left-[240px] right-0 h-[40px] px-4 bg-white/95 backdrop-blur border-b border-slate-200 z-20 select-none">
     <div class="flex items-center gap-2">
         <span class="material-symbols-outlined text-slate-400 text-base">search</span>
-        <input type="text" placeholder="Search datasets..." class="w-48 bg-transparent border-none text-xs outline-none focus:ring-0 placeholder-slate-400 p-0"/>
+        <input type="text" placeholder="Cari data..." class="w-48 bg-transparent border-none text-xs outline-none focus:ring-0 placeholder-slate-400 p-0"/>
     </div>
     <div class="flex items-center gap-3">
         <button class="text-slate-400 hover:text-slate-600 flex items-center">
@@ -335,13 +341,21 @@
         </button>
         <div class="h-3 w-[1px] bg-slate-200"></div>
         <span class="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-            {{ auth()->user()->role ?? 'ADMIN' }}
+            {{ match(auth()->user()->role ?? 'admin') { 'admin' => 'Admin', 'director' => 'Direktur', 'manager' => 'Manager', 'kabag' => 'Kabag', 'spv' => 'SPV', default => auth()->user()->role } }}
         </span>
     </div>
 </header>
 
 <!-- Main content area -->
 <main class="flex-1 min-w-0 ml-[240px] pt-[40px] min-h-screen bg-background">
+    @if(session('status'))
+    <div class="px-6 pt-4">
+        <div class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs font-semibold rounded-sm px-4 py-2.5">
+            <span class="material-symbols-outlined text-[16px]">check_circle</span>
+            <span>{{ session('status') }}</span>
+        </div>
+    </div>
+    @endif
     @yield('content')
 </main>
 

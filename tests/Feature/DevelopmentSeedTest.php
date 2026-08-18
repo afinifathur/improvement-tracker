@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Department;
-use App\Models\User;
 use App\Models\Area;
 use App\Models\AreaAssignment;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,7 +54,7 @@ class DevelopmentSeedTest extends TestCase
             'mr@peroniks.com',
             'direktur@peroniks.com',
             'admin@kaizen.com',
-            'spv_a@kaizen.com'
+            'spv_a@kaizen.com',
         ])->get();
 
         $this->assertSame(41, $realPersonnel->count());
@@ -74,7 +74,7 @@ class DevelopmentSeedTest extends TestCase
             'mr@peroniks.com',
             'direktur@peroniks.com',
             'admin@kaizen.com',
-            'spv_a@kaizen.com'
+            'spv_a@kaizen.com',
         ])->get();
 
         foreach ($realPersonnel as $user) {

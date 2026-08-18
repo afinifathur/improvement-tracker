@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\WeeklyPlanController;
 use App\Http\Controllers\WorkItemController;
@@ -14,7 +15,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware(['auth'])->group(function () {
     // Shared Routes (Dashboard & Rankings)
     Route::middleware(['role:admin,manager,director'])->group(function () {
-        Route::get('/', [WeeklyPlanController::class, 'index'])->name('dashboard');
+        Route::get('/', function () {
+            return redirect()->route('dashboard.index');
+        })->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
         Route::get('/rankings', [WeeklyPlanController::class, 'rankings'])->name('rankings');
         Route::get('/today', [WorkItemController::class, 'today'])->name('work-items.today');
         Route::get('/this-week', [WorkItemController::class, 'thisWeek'])->name('work-items.this-week');
@@ -26,6 +30,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/issues', [IssueController::class, 'index'])->name('issues.index');
         Route::get('/person', [WorkItemController::class, 'person'])->name('work-items.person');
         Route::get('/area', [WorkItemController::class, 'area'])->name('work-items.area');
+        Route::patch('/work-items/{item}/status', [WorkItemController::class, 'updateStatus'])->name('work-items.update-status');
+        Route::post('/work-items/{item}/extend', [WorkItemController::class, 'extend'])->name('work-items.extend');
     });
 
     // Admin Only (Operational)
@@ -39,6 +45,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/daily-reports', [DailyReportController::class, 'store'])->name('daily-reports.store');
         Route::get('/daily-reports/{report}/edit', [DailyReportController::class, 'edit'])->name('daily-reports.edit');
         Route::put('/daily-reports/{report}', [DailyReportController::class, 'update'])->name('daily-reports.update');
+        Route::get('/api/users/{user}/daily-report-options', [DailyReportController::class, 'getDailyReportOptions'])->name('api.users.daily-report-options');
     });
 
     // Daily Control Center (admin full, director read-only)

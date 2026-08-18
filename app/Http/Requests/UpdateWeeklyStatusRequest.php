@@ -24,10 +24,11 @@ class UpdateWeeklyStatusRequest extends FormRequest
     {
         return [
             'status' => 'required|in:completed,completed_no_impact,not_completed,extended',
-            'notes' => 'nullable|string',
-            'proofs' => 'required_if:status,completed,completed_no_impact|array|min:1',
+            'notes' => 'nullable|string|required_if:status,extended',
+            'proofs' => 'nullable|array',
             'proofs.*' => 'image|max:10240', // 10MB max
             'category_corrected' => 'nullable|in:improvement,problem,maintenance',
+            'week_end_date' => 'required_if:status,extended|date',
         ];
     }
 
@@ -39,7 +40,7 @@ class UpdateWeeklyStatusRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'proofs.required_if' => 'Proof of work is required when status is set to completed.',
+            'proofs.required_if' => 'Bukti pekerjaan wajib diisi ketika status disetel ke selesai.',
         ];
     }
 }

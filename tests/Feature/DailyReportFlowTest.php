@@ -352,14 +352,14 @@ class DailyReportFlowTest extends TestCase
         $this->assertSame('not_started', $item->status->value);
     }
 
-    public function test_new_work_item_default_date_is_report_date_plus_one(): void
+    public function test_new_work_item_default_date_equals_report_date(): void
     {
         $spv = $this->reporter();
 
         $response = $this->actingAs($this->admin())
             ->get(route('daily-reports.create', ['person' => $spv->id, 'date' => '2026-08-14']));
 
-        $this->assertSame('2026-08-15', $response->viewData('defaultDate'));
+        $this->assertSame('2026-08-14', $response->viewData('defaultDate'));
     }
 
     public function test_invalid_work_item_prevents_report_creation(): void
@@ -382,5 +382,96 @@ class DailyReportFlowTest extends TestCase
 
         $this->assertDatabaseCount('daily_reports', 0);
         $this->assertDatabaseCount('work_items', 0);
+    }
+
+    public function test_get_daily_report_options_endpoint_returns_json(): void
+    {
+        $spv = $this->reporter();
+        $area = $this->area();
+        $admin = $this->admin();
+
+        // Assign area to spv
+        \App\Models\AreaAssignment::create([
+            'area_id' => $area->id,
+            'user_id' => $spv->id,
+            'role' => 'spv',
+            'started_at' => '2026-08-01',
+        ]);
+
+        $response = $this->actingAs($admin)->getJson(route('api.users.daily-report-options', [
+            'user' => $spv->id,
+            'date' => '2026-08-14'
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'areas' => [
+                '*' => ['id', 'name']
+            ],
+            'has_active_assignments',
+            'weekly_plans'
+        ]);
+    }
+
+    public function test_update_daily_report_saves_existing_and_creates_new_work_items(): void
+    {
+        $dept = Department::create(['name' => 'Production', 'code' => 'PRD']);
+        $spv = $this->reporter($dept->id);
+        $admin = $this->admin();
+        $area = $this->area($dept->id);
+
+        $report = DailyReport::create([
+            'report_date' => '2026-08-14',
+            'reported_by' => $spv->id,
+            'area_id' => $area->id,
+            'created_by' => $admin->id,
+            'updated_by' => $admin->id,
+        ]);
+
+        $item = WorkItem::create([
+            'title' => 'Existing Task',
+            'owner_id' => $spv->id,
+            'area_id' => $area->id,
+            'department_id' => $dept->id,
+            'original_start_date' => '2026-08-14',
+            'original_end_date' => '2026-08-14',
+            'planned_start_date' => '2026-08-14',
+            'planned_end_date' => '2026-08-14',
+            'source_daily_report_id' => $report->id,
+            'created_by' => $admin->id,
+            'updated_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('daily-reports.update', $report), [
+            'today_result' => 'Updated result',
+            'work_items' => [
+                [
+                    'id' => $item->id,
+                    'title' => 'Updated Task Title',
+                    'planned_start_date' => '2026-08-14',
+                    'planned_end_date' => '2026-08-14',
+                    'status' => 'completed',
+                ],
+                [
+                    'title' => 'Newly Added Task',
+                    'planned_start_date' => '2026-08-14',
+                    'planned_end_date' => '2026-08-14',
+                    'status' => 'in_progress',
+                ],
+            ]
+        ]);
+
+        $response->assertRedirect(route('daily-reports.index', ['date' => '2026-08-14']));
+
+        $item->refresh();
+        $this->assertSame('Updated Task Title', $item->title);
+        $this->assertSame('completed', $item->status->value);
+        $this->assertNotNull($item->completed_at);
+
+        $this->assertDatabaseHas('work_items', [
+            'title' => 'Newly Added Task',
+            'status' => 'in_progress',
+            'source_daily_report_id' => $report->id,
+        ]);
     }
 }

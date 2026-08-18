@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\DailyReport;
-use App\Models\Department;
 use App\Models\User;
 use App\Models\WorkItem;
 use Illuminate\Database\Seeder;

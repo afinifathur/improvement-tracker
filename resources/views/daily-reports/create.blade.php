@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Kaizen Tracker | Daily Report')
+@section('title', 'Kaizen Tracker | Laporan Harian')
 
 @section('content')
 @include('daily-reports._entry', [

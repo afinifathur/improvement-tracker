@@ -35,6 +35,7 @@ class WorkItem extends Model
         'cancel_reason_note',
         'carried_from_id',
         'source_daily_report_id',
+        'weekly_plan_id',
         'work_type',
         'created_by',
         'updated_by',
@@ -99,6 +100,11 @@ class WorkItem extends Model
     public function sourceDailyReport(): BelongsTo
     {
         return $this->belongsTo(DailyReport::class, 'source_daily_report_id');
+    }
+
+    public function weeklyPlan(): BelongsTo
+    {
+        return $this->belongsTo(WeeklyPlan::class);
     }
 
     public function carriedFrom(): BelongsTo

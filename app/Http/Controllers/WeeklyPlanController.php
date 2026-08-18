@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateWeeklyStatusRequest;
 use App\Models\User;
 use App\Models\WeeklyPlan;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,7 +27,7 @@ class WeeklyPlanController extends Controller
             ->whereBetween('week_start_date', [$startOfWeek, $endOfWeek])
             ->avg('final_score') ?? 0;
 
-        $performanceData = User::where('role', 'spv')
+        $performanceData = User::operationalPersonnel()
             ->withCount(['weeklyPlans as total' => function ($q) use ($startOfWeek, $endOfWeek) {
                 $q->whereBetween('week_start_date', [$startOfWeek, $endOfWeek]);
             }])
@@ -60,9 +61,9 @@ class WeeklyPlanController extends Controller
 
     public function create()
     {
-        $supervisors = User::where('role', 'spv')->get();
+        $personnel = User::operationalPersonnel()->orderBy('name')->get();
 
-        return view('weekly-plans.create', compact('supervisors'));
+        return view('weekly-plans.create', compact('personnel'));
     }
 
     public function closing()
@@ -70,7 +71,7 @@ class WeeklyPlanController extends Controller
         $startOfWeek = now()->startOfWeek();
         $endOfWeek = now()->endOfWeek();
 
-        $plans = WeeklyPlan::with('user')
+        $plans = WeeklyPlan::with(['user', 'workItems'])
             ->whereBetween('week_start_date', [$startOfWeek, $endOfWeek])
             ->orderBy('status', 'asc')
             ->get();
@@ -87,7 +88,7 @@ class WeeklyPlanController extends Controller
 
     public function rankings()
     {
-        $rankings = User::where('role', 'spv')
+        $rankings = User::operationalPersonnel()
             ->get()
             ->map(function ($user) {
                 $plans = WeeklyPlan::where('user_id', $user->id)->get();
@@ -122,14 +123,19 @@ class WeeklyPlanController extends Controller
     /**
      * Store a newly created weekly plan in storage.
      */
-    public function store(StoreWeeklyPlanRequest $request): JsonResponse
+    public function store(StoreWeeklyPlanRequest $request): JsonResponse|RedirectResponse
     {
         $plan = WeeklyPlan::create($request->validated());
 
-        return response()->json([
-            'message' => 'Weekly plan created successfully.',
-            'data' => $plan->load('user'),
-        ], 201);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Weekly plan created successfully.',
+                'data' => $plan->load('user'),
+            ], 201);
+        }
+
+        return redirect()->route('weekly-plans.closing')
+            ->with('status', 'Rencana mingguan berhasil dibuat.');
     }
 
     /**
@@ -144,6 +150,10 @@ class WeeklyPlanController extends Controller
 
             if ($request->has('category_corrected')) {
                 $plan->category_corrected = $request->category_corrected;
+            }
+
+            if ($request->filled('week_end_date')) {
+                $plan->week_end_date = $request->week_end_date;
             }
 
             $plan->save();

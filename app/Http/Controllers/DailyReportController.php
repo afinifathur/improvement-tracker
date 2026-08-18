@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateDailyReportRequest;
 use App\Models\Area;
 use App\Models\DailyReport;
 use App\Models\User;
+use App\Models\WeeklyPlan;
 use App\Models\WorkItem;
 use App\Services\DailyReportService;
 use Carbon\Carbon;
@@ -22,18 +23,30 @@ class DailyReportController extends Controller
         $date = $this->resolveDate($request->query('date'));
 
         $reporters = User::whereIn('role', ['spv', 'kabag', 'manager'])
-            ->with('department')
+            ->with(['department', 'areaAssignments' => function ($q) use ($date) {
+                $q->activeOn($date)->with('area');
+            }])
             ->orderBy('name')
             ->get();
 
-        $processedIds = DailyReport::whereDate('report_date', $date)->pluck('reported_by');
+        $reports = DailyReport::whereDate('report_date', $date)->get();
+        $processedIds = $reports->pluck('reported_by');
+
+        // Sum active area assignments per user, fallback to 1 if no assignment
+        $expectedCount = 0;
+        foreach ($reporters as $reporter) {
+            $activeCount = $reporter->areaAssignments->count();
+            $expectedCount += ($activeCount > 0) ? $activeCount : 1;
+        }
+
+        $processedCount = $reports->count();
 
         $grouped = $reporters->groupBy(fn ($user) => $user->department?->name ?? 'Unassigned');
 
         $summary = [
-            'expected' => $reporters->count(),
-            'processed' => $processedIds->count(),
-            'remaining' => max(0, $reporters->count() - $processedIds->count()),
+            'expected' => $expectedCount,
+            'processed' => $processedCount,
+            'remaining' => max(0, $expectedCount - $processedCount),
             'open' => WorkItem::whereIn('status', ['not_started', 'in_progress'])->count(),
             'blocked' => WorkItem::where('status', 'blocked')->count(),
             'overdue' => WorkItem::whereNotIn('status', ['completed', 'cancelled'])
@@ -41,34 +54,65 @@ class DailyReportController extends Controller
                 ->count(),
         ];
 
-        return view('daily-reports.index', compact('date', 'grouped', 'processedIds', 'summary'));
+        return view('daily-reports.index', compact('date', 'grouped', 'processedIds', 'reports', 'summary'));
+    }
+
+    public function getDailyReportOptions(Request $request, User $user)
+    {
+        $date = $this->resolveDate($request->query('date'));
+
+        $activeAreas = Area::whereIn('id', function ($query) use ($user, $date) {
+            $query->select('area_id')
+                ->from('area_assignments')
+                ->where('user_id', $user->id)
+                ->where('started_at', '<=', $date)
+                ->where(fn ($q) => $q->whereNull('ended_at')->orWhere('ended_at', '>=', $date));
+        })->where('is_active', true)->get();
+
+        $hasActiveAssignments = $activeAreas->isNotEmpty();
+        if ($activeAreas->isEmpty()) {
+            $activeAreas = Area::where('is_active', true)->get();
+        }
+
+        $carbonDate = Carbon::parse($date);
+        $weekStart = $carbonDate->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $weeklyPlans = WeeklyPlan::where('user_id', $user->id)
+            ->whereDate('week_start_date', $weekStart)
+            ->get();
+
+        return response()->json([
+            'areas' => $activeAreas->map(fn($a) => ['id' => $a->id, 'name' => $a->name]),
+            'has_active_assignments' => $hasActiveAssignments,
+            'weekly_plans' => $weeklyPlans->map(fn($p) => ['id' => $p->id, 'title' => $p->title]),
+        ]);
     }
 
     public function create(Request $request)
     {
         $date = $this->resolveDate($request->query('date'));
         $personId = $request->query('person');
+        $areaId = $request->query('area_id');
 
-        if (! $personId) {
-            return redirect()->route('daily-reports.index', ['date' => $date]);
+        $person = null;
+        if ($personId) {
+            $person = User::findOrFail($personId);
+
+            $existing = DailyReport::where('reported_by', $personId)
+                ->whereDate('report_date', $date)
+                ->where('area_id', $areaId)
+                ->first();
+
+            if ($existing) {
+                return redirect()->route('daily-reports.edit', $existing);
+            }
         }
 
-        $person = User::findOrFail($personId);
-
-        $existing = DailyReport::where('reported_by', $personId)
-            ->whereDate('report_date', $date)
-            ->first();
-
-        if ($existing) {
-            return redirect()->route('daily-reports.edit', $existing);
-        }
-
-        return $this->renderEntry($person, $date, null);
+        return $this->renderEntry($person, $date, null, $areaId);
     }
 
     public function edit(DailyReport $report)
     {
-        return $this->renderEntry($report->reporter, $report->report_date->toDateString(), $report);
+        return $this->renderEntry($report->reporter, $report->report_date->toDateString(), $report, $report->area_id);
     }
 
     public function store(StoreDailyReportRequest $request)
@@ -83,7 +127,7 @@ class DailyReportController extends Controller
 
         if ($existing) {
             return redirect()->route('daily-reports.edit', $existing)
-                ->with('status', 'A daily report for this person, area and date already exists.');
+                ->with('status', 'Laporan harian untuk personel, area, dan tanggal ini sudah ada.');
         }
 
         $data = $request->validated();
@@ -100,14 +144,14 @@ class DailyReportController extends Controller
 
             if ($existing) {
                 return redirect()->route('daily-reports.edit', $existing)
-                    ->with('status', 'A daily report for this person, area and date already exists.');
+                    ->with('status', 'Laporan harian untuk personel, area, dan tanggal ini sudah ada.');
             }
 
             throw $e;
         }
 
         return redirect()->route('daily-reports.index', ['date' => $report->report_date->toDateString()])
-            ->with('status', 'Daily report saved.');
+            ->with('status', 'Laporan harian disimpan.');
     }
 
     public function update(UpdateDailyReportRequest $request, DailyReport $report)
@@ -115,20 +159,50 @@ class DailyReportController extends Controller
         $data = $request->validated();
         $data['work_items'] = $request->input('work_items', []);
 
+        // Also fetch area/dept mapping from existing report context if not explicitly in request
+        $data['reported_by'] = $report->reported_by;
+        $data['area_id'] = $report->area_id;
+        $data['department_id'] = $report->department_id;
+
         $this->service->update($report, $data, auth()->id());
 
         return redirect()->route('daily-reports.index', ['date' => $report->report_date->toDateString()])
-            ->with('status', 'Daily report updated.');
+            ->with('status', 'Laporan harian diperbarui.');
     }
 
-    private function renderEntry(User $person, string $date, ?DailyReport $report)
+    private function renderEntry(?User $person, string $date, ?DailyReport $report, ?int $areaId = null)
     {
-        $workItems = $this->loadActiveWorkItems($person->id, $date);
-        $defaultDate = Carbon::parse($date)->addDay()->toDateString();
+        $workItems = $person ? $this->loadActiveWorkItems($person->id, $date) : ['overdue' => [], 'current' => [], 'future' => []];
+        $defaultDate = $date;
 
+        if ($person) {
+            $activeAreas = Area::whereIn('id', function ($query) use ($person, $date) {
+                $query->select('area_id')
+                    ->from('area_assignments')
+                    ->where('user_id', $person->id)
+                    ->where('started_at', '<=', $date)
+                    ->where(fn ($q) => $q->whereNull('ended_at')->orWhere('ended_at', '>=', $date));
+            })->where('is_active', true)->get();
+
+            if ($activeAreas->isEmpty()) {
+                $activeAreas = Area::where('is_active', true)->get();
+            }
+
+            $carbonDate = Carbon::parse($date);
+            $weekStart = $carbonDate->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+            $weeklyPlans = WeeklyPlan::where('user_id', $person->id)
+                ->whereDate('week_start_date', $weekStart)
+                ->get();
+        } else {
+            $activeAreas = Area::where('is_active', true)->get();
+            $weeklyPlans = collect();
+        }
+
+        $allPersonnel = User::operationalPersonnel()->orderBy('name')->get();
+        $reportItems = $report ? $report->workItems : collect();
         $view = $report ? 'daily-reports.edit' : 'daily-reports.create';
 
-        return view($view, compact('person', 'date', 'workItems', 'report', 'defaultDate'));
+        return view($view, compact('person', 'date', 'workItems', 'report', 'defaultDate', 'activeAreas', 'weeklyPlans', 'areaId', 'allPersonnel', 'reportItems'));
     }
 
     private function loadActiveWorkItems(int $personId, string $date): array

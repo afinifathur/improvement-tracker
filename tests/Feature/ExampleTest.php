@@ -23,6 +23,6 @@ class ExampleTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/dashboard');
     }
 }

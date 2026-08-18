@@ -56,4 +56,12 @@ class AreaAssignment extends Model
 
         return $this->ended_at->copy()->startOfDay()->greaterThanOrEqualTo($day);
     }
+
+    public function scopeActiveOn($query, $date)
+    {
+        $day = Carbon::parse($date)->startOfDay();
+
+        return $query->where('started_at', '<=', $day)
+            ->where(fn ($q) => $q->whereNull('ended_at')->orWhere('ended_at', '>=', $day));
+    }
 }

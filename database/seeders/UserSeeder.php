@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\Department;
-use App\Models\Area;
-use App\Models\User;
-use App\Models\AreaAssignment;
 use App\Enums\Position;
+use App\Models\Area;
+use App\Models\AreaAssignment;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -63,45 +63,45 @@ class UserSeeder extends Seeder
     ];
 
     private array $personnel = [
-        ["name" => "AFIN", "jabatan" => "MANAGER", "area" => "PPIC", "dept" => "PPIC"],
-        ["name" => "EKO", "jabatan" => "STAFF", "area" => "PPIC", "dept" => "PPIC"],
-        ["name" => "IKA", "jabatan" => "STAFF", "area" => "PPIC", "dept" => "PPIC"],
-        ["name" => "AGRIN", "jabatan" => "STAFF", "area" => "IT DAN K3", "dept" => "HRD"],
-        ["name" => "NISA", "jabatan" => "STAFF", "area" => "CCTV", "dept" => "HRD"],
-        ["name" => "ROKI", "jabatan" => "STAFF", "area" => "HR", "dept" => "HRD"],
-        ["name" => "RIKI", "jabatan" => "SPV", "area" => "BAHAN BAKU", "dept" => "PPIC"],
-        ["name" => "HERMAN", "jabatan" => "SPV", "area" => "GUDANG FLANGE", "dept" => "PPIC"],
-        ["name" => "DANI", "jabatan" => "SPV", "area" => "GUDANG FITTING", "dept" => "PPIC"],
-        ["name" => "RUKASIM", "jabatan" => "KABAG", "area" => "COR FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "ROJI/MAJID", "jabatan" => "SPV", "area" => "COR FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "HUDA", "jabatan" => "SPV", "area" => "NETTO FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "HUDA", "jabatan" => "SPV", "area" => "NETTO FITTING", "dept" => "PRODUKSI FITTING"],
-        ["name" => "AININ", "jabatan" => "WAKIL SPV", "area" => "KIMIA", "dept" => "PRODUKSI FITTING"],
-        ["name" => "ALFIAN", "jabatan" => "KABAG", "area" => "CNC FITTING", "dept" => "PRODUKSI FITTING"],
-        ["name" => "EDI", "jabatan" => "KABAG", "area" => "SERVICE FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "SODIQ/BAMBANG", "jabatan" => "SPV", "area" => "BUBUT OTOMATIS", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "NURI", "jabatan" => "SPV", "area" => "QC SOLDER", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "TEGUH", "jabatan" => "SPV", "area" => "BOR FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "SAHRUL/BAGUS", "jabatan" => "SPV", "area" => "CNC FLANGE", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "ARSENG", "jabatan" => "SPV", "area" => "UMUM", "dept" => "UMUM"],
-        ["name" => "TRI HARDI", "jabatan" => "KABAG", "area" => "MAINTENANCE", "dept" => "MAINTENANCE"],
-        ["name" => "DENY", "jabatan" => "SPV", "area" => "MAINTENANCE FITTING", "dept" => "MAINTENANCE"],
-        ["name" => "FIRNANDA", "jabatan" => "SPV", "area" => "MAINTENANCE COR FLANGE", "dept" => "MAINTENANCE"],
-        ["name" => "UTOMO", "jabatan" => "SPV", "area" => "MAINTENANCE BUBUT CNC", "dept" => "MAINTENANCE"],
-        ["name" => "ARIS", "jabatan" => "SPV", "area" => "QC FITTING", "dept" => "QA/QC"],
-        ["name" => "YAYAK", "jabatan" => "MANAGER", "area" => "QA/QC", "dept" => "QA/QC"],
-        ["name" => "ANDRE", "jabatan" => "STAFF", "area" => "QA FITTING", "dept" => "QA/QC"],
-        ["name" => "ADI", "jabatan" => "STAFF", "area" => "QA FLANGE", "dept" => "QA/QC"],
-        ["name" => "FAISAL", "jabatan" => "SPV", "area" => "MILLING CNC", "dept" => "MILLING CNC"],
-        ["name" => "EKO RIRIT", "jabatan" => "SPV", "area" => "BESI", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "ULIL", "jabatan" => "SPV", "area" => "ALUMINIUM", "dept" => "ALUMINIUM"],
-        ["name" => "DWIAN", "jabatan" => "KABAG", "area" => "COR FITTING", "dept" => "PRODUKSI FITTING"],
-        ["name" => "RAVY", "jabatan" => "STAFF", "area" => "FITTING", "dept" => "PRODUKSI FITTING"],
-        ["name" => "LINGGA", "jabatan" => "SPV", "area" => "LAPISAN", "dept" => "PRODUKSI FITTING"],
-        ["name" => "AGUS", "jabatan" => "SPV", "area" => "MARKING", "dept" => "PRODUKSI FLANGE"],
-        ["name" => "DEVI", "jabatan" => "SPV", "area" => "LILIN", "dept" => "PRODUKSI FITTING"],
-        ["name" => "JOKO", "jabatan" => "SPV", "area" => "FITTING", "dept" => "PRODUKSI FITTING"],
-        ["name" => "ROUD", "jabatan" => "KABAG", "area" => "SECURITY", "dept" => "HRD"]
+        ['name' => 'AFIN', 'jabatan' => 'MANAGER', 'area' => 'PPIC', 'dept' => 'PPIC'],
+        ['name' => 'EKO', 'jabatan' => 'STAFF', 'area' => 'PPIC', 'dept' => 'PPIC'],
+        ['name' => 'IKA', 'jabatan' => 'STAFF', 'area' => 'PPIC', 'dept' => 'PPIC'],
+        ['name' => 'AGRIN', 'jabatan' => 'STAFF', 'area' => 'IT DAN K3', 'dept' => 'HRD'],
+        ['name' => 'NISA', 'jabatan' => 'STAFF', 'area' => 'CCTV', 'dept' => 'HRD'],
+        ['name' => 'ROKI', 'jabatan' => 'STAFF', 'area' => 'HR', 'dept' => 'HRD'],
+        ['name' => 'RIKI', 'jabatan' => 'SPV', 'area' => 'BAHAN BAKU', 'dept' => 'PPIC'],
+        ['name' => 'HERMAN', 'jabatan' => 'SPV', 'area' => 'GUDANG FLANGE', 'dept' => 'PPIC'],
+        ['name' => 'DANI', 'jabatan' => 'SPV', 'area' => 'GUDANG FITTING', 'dept' => 'PPIC'],
+        ['name' => 'RUKASIM', 'jabatan' => 'KABAG', 'area' => 'COR FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'ROJI/MAJID', 'jabatan' => 'SPV', 'area' => 'COR FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'HUDA', 'jabatan' => 'SPV', 'area' => 'NETTO FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'HUDA', 'jabatan' => 'SPV', 'area' => 'NETTO FITTING', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'AININ', 'jabatan' => 'WAKIL SPV', 'area' => 'KIMIA', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'ALFIAN', 'jabatan' => 'KABAG', 'area' => 'CNC FITTING', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'EDI', 'jabatan' => 'KABAG', 'area' => 'SERVICE FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'SODIQ/BAMBANG', 'jabatan' => 'SPV', 'area' => 'BUBUT OTOMATIS', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'NURI', 'jabatan' => 'SPV', 'area' => 'QC SOLDER', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'TEGUH', 'jabatan' => 'SPV', 'area' => 'BOR FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'SAHRUL/BAGUS', 'jabatan' => 'SPV', 'area' => 'CNC FLANGE', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'ARSENG', 'jabatan' => 'SPV', 'area' => 'UMUM', 'dept' => 'UMUM'],
+        ['name' => 'TRI HARDI', 'jabatan' => 'KABAG', 'area' => 'MAINTENANCE', 'dept' => 'MAINTENANCE'],
+        ['name' => 'DENY', 'jabatan' => 'SPV', 'area' => 'MAINTENANCE FITTING', 'dept' => 'MAINTENANCE'],
+        ['name' => 'FIRNANDA', 'jabatan' => 'SPV', 'area' => 'MAINTENANCE COR FLANGE', 'dept' => 'MAINTENANCE'],
+        ['name' => 'UTOMO', 'jabatan' => 'SPV', 'area' => 'MAINTENANCE BUBUT CNC', 'dept' => 'MAINTENANCE'],
+        ['name' => 'ARIS', 'jabatan' => 'SPV', 'area' => 'QC FITTING', 'dept' => 'QA/QC'],
+        ['name' => 'YAYAK', 'jabatan' => 'MANAGER', 'area' => 'QA/QC', 'dept' => 'QA/QC'],
+        ['name' => 'ANDRE', 'jabatan' => 'STAFF', 'area' => 'QA FITTING', 'dept' => 'QA/QC'],
+        ['name' => 'ADI', 'jabatan' => 'STAFF', 'area' => 'QA FLANGE', 'dept' => 'QA/QC'],
+        ['name' => 'FAISAL', 'jabatan' => 'SPV', 'area' => 'MILLING CNC', 'dept' => 'MILLING CNC'],
+        ['name' => 'EKO RIRIT', 'jabatan' => 'SPV', 'area' => 'BESI', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'ULIL', 'jabatan' => 'SPV', 'area' => 'ALUMINIUM', 'dept' => 'ALUMINIUM'],
+        ['name' => 'DWIAN', 'jabatan' => 'KABAG', 'area' => 'COR FITTING', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'RAVY', 'jabatan' => 'STAFF', 'area' => 'FITTING', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'LINGGA', 'jabatan' => 'SPV', 'area' => 'LAPISAN', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'AGUS', 'jabatan' => 'SPV', 'area' => 'MARKING', 'dept' => 'PRODUKSI FLANGE'],
+        ['name' => 'DEVI', 'jabatan' => 'SPV', 'area' => 'LILIN', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'JOKO', 'jabatan' => 'SPV', 'area' => 'FITTING', 'dept' => 'PRODUKSI FITTING'],
+        ['name' => 'ROUD', 'jabatan' => 'KABAG', 'area' => 'SECURITY', 'dept' => 'HRD'],
     ];
 
     public function run(): void
@@ -120,7 +120,7 @@ class UserSeeder extends Seeder
                     continue;
                 }
 
-                $email = strtolower(str_replace(' ', '', $name)) . '@peroniks.com';
+                $email = strtolower(str_replace(' ', '', $name)).'@peroniks.com';
                 $role = 'spv';
                 if ($row['jabatan'] === 'MANAGER') {
                     $role = 'manager';
@@ -158,9 +158,9 @@ class UserSeeder extends Seeder
             'mr@peroniks.com',
             'direktur@peroniks.com',
             'admin@kaizen.com',
-            'spv_a@kaizen.com'
+            'spv_a@kaizen.com',
         ];
-        $seededEmails = array_map(function($u) {
+        $seededEmails = array_map(function ($u) {
             return $u->email;
         }, $seededUsers);
         User::whereNotIn('email', array_merge($authEmails, $seededEmails))->delete();
@@ -171,22 +171,22 @@ class UserSeeder extends Seeder
             foreach ($names as $name) {
                 $user = $seededUsers[$name];
                 $deptCode = $this->deptNameToCode[$row['dept']];
-                
+
                 $managerId = null;
-                
+
                 if ($user->role === 'manager') {
                     $managerId = null;
                 } elseif ($user->role === 'kabag') {
-                    $managerId = !empty($managers) ? $managers[0]->id : null;
+                    $managerId = ! empty($managers) ? $managers[0]->id : null;
                 } else {
-                    if (!empty($kabagsByDept[$deptCode])) {
+                    if (! empty($kabagsByDept[$deptCode])) {
                         $managerId = $kabagsByDept[$deptCode][0]->id;
                     } else {
                         $deptManager = User::where('role', 'manager')->where('department_id', $user->department_id)->first();
-                        $managerId = $deptManager ? $deptManager->id : (!empty($managers) ? $managers[0]->id : null);
+                        $managerId = $deptManager ? $deptManager->id : (! empty($managers) ? $managers[0]->id : null);
                     }
                 }
-                
+
                 $user->update(['manager_id' => $managerId]);
             }
         }
@@ -200,7 +200,7 @@ class UserSeeder extends Seeder
                 $user = $seededUsers[$name];
                 $areaCode = $this->areaNameToCode[$row['area']];
                 $area = Area::where('code', $areaCode)->firstOrFail();
-                
+
                 $roleEnum = Position::Spv;
                 if ($row['jabatan'] === 'MANAGER') {
                     $roleEnum = Position::Manager;

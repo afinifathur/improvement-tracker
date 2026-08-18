@@ -24,7 +24,7 @@ class DailyReportService
                 'updated_by' => $actorId,
             ]);
 
-            $this->createWorkItems(
+            $this->persistWorkItems(
                 $report,
                 $data['work_items'] ?? [],
                 $data['reported_by'],
@@ -38,7 +38,7 @@ class DailyReportService
     }
 
     /**
-     * Update the report narrative and append any new work items.
+     * Update the report narrative and update/append work items safely.
      */
     public function update(DailyReport $report, array $data, int $actorId): DailyReport
     {
@@ -48,7 +48,7 @@ class DailyReportService
                 'updated_by' => $actorId,
             ]);
 
-            $this->createWorkItems(
+            $this->persistWorkItems(
                 $report,
                 $data['work_items'] ?? [],
                 $report->reported_by,
@@ -61,7 +61,7 @@ class DailyReportService
         });
     }
 
-    private function createWorkItems(
+    private function persistWorkItems(
         DailyReport $report,
         array $items,
         int $ownerId,
@@ -72,21 +72,53 @@ class DailyReportService
         foreach ($items as $item) {
             $start = $item['planned_start_date'];
             $end = $item['planned_end_date'];
+            $status = $item['status'] ?? 'not_started';
 
-            WorkItem::create([
-                'title' => $item['title'],
-                'description' => $item['description'] ?? null,
-                'owner_id' => $ownerId,
-                'area_id' => $areaId,
-                'department_id' => $departmentId,
-                'original_start_date' => $start,
-                'original_end_date' => $end,
-                'planned_start_date' => $start,
-                'planned_end_date' => $end,
-                'source_daily_report_id' => $report->id,
-                'created_by' => $actorId,
-                'updated_by' => $actorId,
-            ]);
+            $timestamps = [];
+            if ($status === 'completed') {
+                $timestamps['completed_at'] = now();
+            } else {
+                $timestamps['completed_at'] = null;
+            }
+
+            if ($status === 'blocked') {
+                $timestamps['blocked_at'] = now();
+            } else {
+                $timestamps['blocked_at'] = null;
+            }
+
+            if (!empty($item['id'])) {
+                $existingItem = WorkItem::findOrFail($item['id']);
+                
+                $updateData = array_merge([
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?? null,
+                    'planned_start_date' => $start,
+                    'planned_end_date' => $end,
+                    'weekly_plan_id' => $item['weekly_plan_id'] ?? null,
+                    'status' => $status,
+                    'updated_by' => $actorId,
+                ], $timestamps);
+
+                $existingItem->update($updateData);
+            } else {
+                WorkItem::create(array_merge([
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?? null,
+                    'owner_id' => $ownerId,
+                    'area_id' => $areaId,
+                    'department_id' => $departmentId,
+                    'original_start_date' => $start,
+                    'original_end_date' => $end,
+                    'planned_start_date' => $start,
+                    'planned_end_date' => $end,
+                    'source_daily_report_id' => $report->id,
+                    'weekly_plan_id' => $item['weekly_plan_id'] ?? null,
+                    'status' => $status,
+                    'created_by' => $actorId,
+                    'updated_by' => $actorId,
+                ], $timestamps));
+            }
         }
     }
 }
