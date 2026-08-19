@@ -5,6 +5,15 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>@yield('title', 'Kaizen Tracker')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('kaizen-sidebar-collapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -147,20 +156,41 @@
             border-color: #0058be;
             box-shadow: 0 0 0 1px #0058be;
         }
+
+        /* Collapsible sidebar */
+        #app-sidebar { transition: width .2s ease; }
+        #app-header { transition: left .2s ease; }
+        #app-main { transition: margin-left .2s ease; }
+
+        html.sidebar-collapsed #app-sidebar { width: 4rem; }
+        html.sidebar-collapsed #app-header { left: 4rem; }
+        html.sidebar-collapsed #app-main { margin-left: 4rem; }
+
+        html.sidebar-collapsed #app-sidebar .sidebar-brand-text,
+        html.sidebar-collapsed #app-sidebar .sidebar-section-label,
+        html.sidebar-collapsed #app-sidebar .sidebar-cta-label,
+        html.sidebar-collapsed #app-sidebar .sidebar-user-text { display: none; }
+
+        html.sidebar-collapsed #app-sidebar nav a span:not(.material-symbols-outlined) { display: none; }
+
+        html.sidebar-collapsed #app-sidebar .sidebar-header { padding-left: .5rem; padding-right: .5rem; }
+        html.sidebar-collapsed #app-sidebar .sidebar-brand-row,
+        html.sidebar-collapsed #app-sidebar .sidebar-user-row { justify-content: center; }
+        html.sidebar-collapsed #app-sidebar nav a { justify-content: center; padding-left: 0; padding-right: 0; }
     </style>
     @yield('head')
 </head>
 <body class="bg-background text-on-surface antialiased flex min-h-screen">
 
 <!-- SideNavBar -->
-<aside class="flex flex-col fixed top-0 left-0 h-screen w-[240px] border-r border-slate-200 bg-white text-xs font-medium z-30 select-none">
+<aside id="app-sidebar" class="flex flex-col fixed top-0 left-0 h-screen w-[240px] border-r border-slate-200 bg-white text-xs font-medium z-30 select-none">
     <!-- Header -->
-    <div class="p-4 border-b border-slate-100">
-        <div class="flex items-center gap-2.5">
+    <div class="p-4 border-b border-slate-100 sidebar-header">
+        <div class="flex items-center gap-2.5 sidebar-brand-row">
             <div class="w-6 h-6 bg-secondary flex items-center justify-center rounded">
                 <span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 sidebar-brand-text">
                 <h1 class="text-sm font-bold text-slate-800 leading-none truncate">Kaizen Tracker</h1>
                 <p class="text-[9px] uppercase tracking-wider font-semibold text-slate-400 mt-1 truncate">PT. Peroni Karya Sentra</p>
             </div>
@@ -170,9 +200,9 @@
     <!-- Quick Action / New Item (if admin) -->
     @if(auth()->user()->isAdmin())
     <div class="p-3 border-b border-slate-100 bg-slate-50/50">
-        <a href="{{ route('weekly-plans.create') }}" class="flex items-center justify-center gap-1.5 w-full bg-secondary text-white py-1.5 rounded text-[11px] font-bold tracking-wide hover:brightness-110 active:scale-[0.98] transition-all shadow-sm">
+        <a href="{{ route('weekly-plans.create') }}" title="Rencana Baru" class="flex items-center justify-center gap-1.5 w-full bg-secondary text-white py-1.5 rounded text-[11px] font-bold tracking-wide hover:brightness-110 active:scale-[0.98] transition-all shadow-sm">
             <span class="material-symbols-outlined text-sm font-bold">add</span>
-            RENCANA BARU
+            <span class="sidebar-cta-label">RENCANA BARU</span>
         </a>
     </div>
     @endif
@@ -181,7 +211,7 @@
     <div class="flex-1 overflow-y-auto p-3 space-y-4">
         <!-- Section: Views -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">TAMPILAN</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5 sidebar-section-label">TAMPILAN</span>
             <nav class="space-y-0.5">
                 <a href="{{ Route::has('dashboard.index') ? route('dashboard.index') : '#' }}" class="flex items-center justify-between px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('dashboard.index') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <div class="flex items-center gap-2.5">
@@ -242,7 +272,7 @@
 
         <!-- Section: Slices -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">ANALISIS</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5 sidebar-section-label">ANALISIS</span>
             <nav class="space-y-0.5">
                 <a href="{{ route('work-items.person') }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('work-items.person') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">person</span>
@@ -257,7 +287,7 @@
 
         <!-- Section: Operations -->
         <div>
-            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">OPERASI</span>
+            <span class="px-2 text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5 sidebar-section-label">OPERASI</span>
             <nav class="space-y-0.5">
                 @if(auth()->user()->isAdmin() || auth()->user()->role === 'director')
                 <a href="{{ Route::has('daily-reports.index') ? route('daily-reports.index') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors {{ request()->routeIs('daily-reports.*') ? 'bg-slate-100/80 text-slate-900 border-l-2 border-secondary font-semibold pl-2' : '' }}">
@@ -285,9 +315,9 @@
 
     <!-- Footer -->
     <div class="p-3 border-t border-slate-200 bg-slate-50/50 mt-auto">
-        <div class="flex items-center gap-2 px-1">
+        <div class="flex items-center gap-2 px-1 sidebar-user-row">
             <x-avatar class="w-6 h-6 rounded grayscale" :name="auth()->user()->name ?? 'User'" background="0058be" color="fff"/>
-            <div class="min-w-0 flex-1">
+            <div class="min-w-0 flex-1 sidebar-user-text">
                 <p class="text-[10px] font-bold text-slate-700 truncate leading-normal">{{ auth()->user()->name ?? 'Guest' }}</p>
                 <p class="text-[8px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ match(auth()->user()->role ?? 'spv') { 'admin' => 'Admin', 'director' => 'Direktur', 'manager' => 'Manager', 'kabag' => 'Kabag', 'spv' => 'SPV', default => auth()->user()->role } }}</p>
             </div>
@@ -300,8 +330,11 @@
 </aside>
 
 <!-- Top App Bar -->
-<header class="flex justify-between items-center fixed top-0 left-[240px] right-0 h-[40px] px-4 bg-white/95 backdrop-blur border-b border-slate-200 z-20 select-none">
+<header id="app-header" class="flex justify-between items-center fixed top-0 left-[240px] right-0 h-[40px] px-4 bg-white/95 backdrop-blur border-b border-slate-200 z-20 select-none">
     <div class="flex items-center gap-2">
+        <button id="sidebar-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar" class="flex items-center justify-center w-7 h-7 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary shrink-0">
+            <span class="material-symbols-outlined text-[18px]" id="sidebar-toggle-icon">chevron_left</span>
+        </button>
         <span class="material-symbols-outlined text-slate-400 text-base">search</span>
         <input type="text" placeholder="Cari data..." class="w-48 bg-transparent border-none text-xs outline-none focus:ring-0 placeholder-slate-400 p-0"/>
     </div>
@@ -317,7 +350,7 @@
 </header>
 
 <!-- Main content area -->
-<main class="flex-1 min-w-0 ml-[240px] pt-[40px] min-h-screen bg-background">
+<main id="app-main" class="flex-1 min-w-0 ml-[240px] pt-[40px] min-h-screen bg-background">
     @if(session('status'))
     <div class="px-6 pt-4">
         <div class="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 text-xs font-semibold rounded-sm px-4 py-2.5">
@@ -330,5 +363,42 @@
 </main>
 
 @yield('scripts')
+<script>
+    (function () {
+        var KEY = 'kaizen-sidebar-collapsed';
+        var root = document.documentElement;
+        var toggle = document.getElementById('sidebar-toggle');
+        var icon = document.getElementById('sidebar-toggle-icon');
+        var links = document.querySelectorAll('#app-sidebar nav a');
+
+        function apply(collapsed) {
+            if (toggle) {
+                toggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                toggle.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+            }
+            if (icon) {
+                icon.textContent = collapsed ? 'chevron_right' : 'chevron_left';
+            }
+            links.forEach(function (a) {
+                if (collapsed) {
+                    var label = a.querySelector('span:not(.material-symbols-outlined)');
+                    if (label) a.title = label.textContent.trim();
+                } else {
+                    a.removeAttribute('title');
+                }
+            });
+        }
+
+        apply(root.classList.contains('sidebar-collapsed'));
+
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var collapsed = root.classList.toggle('sidebar-collapsed');
+                try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch (e) {}
+                apply(collapsed);
+            });
+        }
+    })();
+</script>
 </body>
 </html>
