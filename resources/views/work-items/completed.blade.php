@@ -144,7 +144,7 @@
                                         </td>
                                         <td>
                                             <div class="flex items-center gap-2">
-                                                <img alt="Avatar" class="w-4 h-4 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode($item->owner->name ?? 'User') }}&background=f1f5f9&color=64748b&size=32"/>
+                                                <x-avatar class="w-4 h-4 rounded grayscale" :name="$item->owner->name ?? 'User'" background="f1f5f9" color="64748b"/>
                                                 <span class="font-semibold text-slate-600 line-through">{{ $item->owner->name ?? 'Belum Ditentukan' }}</span>
                                             </div>
                                         </td>
@@ -219,7 +219,7 @@
                                     </td>
                                     <td>
                                         <div class="flex items-center gap-2">
-                                            <img alt="Avatar" class="w-4 h-4 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode($item->owner->name ?? 'User') }}&background=f1f5f9&color=64748b&size=32"/>
+                                            <x-avatar class="w-4 h-4 rounded grayscale" :name="$item->owner->name ?? 'User'" background="f1f5f9" color="64748b"/>
                                             <span class="font-semibold text-slate-600 line-through">{{ $item->owner->name ?? 'Belum Ditentukan' }}</span>
                                         </div>
                                     </td>

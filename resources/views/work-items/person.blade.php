@@ -21,7 +21,7 @@
     @if($selectedPerson)
         <!-- Person Header Card -->
         <div class="bg-white border border-slate-200 rounded-sm p-4 flex flex-wrap items-center gap-6">
-            <img alt="Avatar" class="w-12 h-12 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode($selectedPerson->name) }}&background=0058be&color=fff&size=96"/>
+            <x-avatar class="w-12 h-12 rounded grayscale" :name="$selectedPerson->name" background="0058be" color="fff"/>
             <div class="min-w-0">
                 <h3 class="text-base font-extrabold text-slate-800">{{ $selectedPerson->name }}</h3>
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ match($selectedPerson->role) { 'admin' => 'Admin', 'director' => 'Direktur', 'manager' => 'Manager', 'kabag' => 'Kabag', 'spv' => 'SPV', default => $selectedPerson->role } }}</p>
@@ -213,7 +213,7 @@
                         <tr class="cursor-pointer" onclick="window.location='{{ route('work-items.person', ['person' => $person->user->id]) }}'">
                             <td>
                                 <div class="flex items-center gap-2">
-                                    <img alt="Avatar" class="w-5 h-5 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode($person->user->name) }}&background=f1f5f9&color=64748b&size=32"/>
+                                    <x-avatar class="w-5 h-5 rounded grayscale" :name="$person->user->name" background="f1f5f9" color="64748b"/>
                                     <span class="font-bold text-slate-700">{{ $person->user->name }}</span>
                                 </div>
                             </td>

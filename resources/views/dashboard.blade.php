@@ -92,7 +92,7 @@
             <h3 class="text-[11px] font-bold uppercase tracking-widest text-on-surface">Sorotan Mingguan</h3>
             @if($topPerformer ?? null)
             <div class="bg-white p-4 border border-slate-100 flex items-center gap-4">
-                <img alt="{{ $topPerformer->name }}" class="w-12 h-12 rounded-sm object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode($topPerformer->name) }}&background=005db6&color=fff"/>
+                <x-avatar class="w-12 h-12 rounded-sm grayscale" :name="$topPerformer->name" background="005db6" color="fff"/>
                 <div class="flex-1">
                     <p class="text-sm font-bold">{{ $topPerformer->name }}</p>
                     <p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">{{ $topPerformer->department_name }} • Peringkat #1</p>

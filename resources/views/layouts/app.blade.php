@@ -4,37 +4,7 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>@yield('title', 'Kaizen Tracker')</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#0058be",
-                        "secondary": "#0058be",
-                        "tertiary-fixed": "#fadfb8",
-                        "on-secondary-fixed-variant": "#004395",
-                        "background": "#f8fafb",
-                        "surface": "#ffffff",
-                        "error": "#9f403d",
-                        // MD3 Tokens for backward compatibility
-                        "surface-container-low": "#f0f4f6",
-                        "surface-container-high": "#e1eaec",
-                        "on-surface-variant": "#566164",
-                        "inverse-surface": "#0b0f10",
-                        "on-surface": "#2a3437",
-                        "outline-variant": "#a9b4b7"
-                    },
-                    fontFamily: {
-                        "sans": ["Inter", "sans-serif"],
-                    },
-                },
-            },
-        }
-    </script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -316,7 +286,7 @@
     <!-- Footer -->
     <div class="p-3 border-t border-slate-200 bg-slate-50/50 mt-auto">
         <div class="flex items-center gap-2 px-1">
-            <img alt="User Avatar" class="w-6 h-6 rounded object-cover grayscale" src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name ?? 'User') }}&background=0058be&color=fff"/>
+            <x-avatar class="w-6 h-6 rounded grayscale" :name="auth()->user()->name ?? 'User'" background="0058be" color="fff"/>
             <div class="min-w-0 flex-1">
                 <p class="text-[10px] font-bold text-slate-700 truncate leading-normal">{{ auth()->user()->name ?? 'Guest' }}</p>
                 <p class="text-[8px] text-slate-400 font-semibold uppercase tracking-wider leading-none">{{ match(auth()->user()->role ?? 'spv') { 'admin' => 'Admin', 'director' => 'Direktur', 'manager' => 'Manager', 'kabag' => 'Kabag', 'spv' => 'SPV', default => auth()->user()->role } }}</p>
