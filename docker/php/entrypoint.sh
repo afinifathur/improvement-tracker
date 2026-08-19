@@ -7,6 +7,9 @@ mkdir -p storage/framework/cache \
          storage/logs \
          storage/app/public
 
+# Seed the shared public volume (served by nginx) with baked assets
+cp -a /var/www/html/public-seed/. /var/www/html/public/
+
 php artisan storage:link || true
 
 exec "$@"

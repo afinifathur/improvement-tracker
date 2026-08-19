@@ -40,6 +40,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction \
 
 COPY --from=frontend /app/public/build ./public/build
 
+# Snapshot the baked public dir so the entrypoint can seed the shared nginx volume
+RUN cp -a public public-seed
+
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-app.ini
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -49,7 +52,7 @@ RUN mkdir -p storage/framework/cache \
              storage/framework/views \
              storage/logs \
              storage/app/public \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chown -R www-data:www-data storage bootstrap/cache public public-seed
 
 USER www-data
 
