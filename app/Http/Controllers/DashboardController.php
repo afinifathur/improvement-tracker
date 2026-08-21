@@ -85,14 +85,19 @@ class DashboardController extends Controller
         $cursor = $weekStart->copy();
         while ($cursor->lte($weekEnd)) {
             $dateStr = $cursor->toDateString();
-            $submitted = count($submittedByDate[$dateStr] ?? []);
+            $submittedUserIdsForDate = isset($submittedByDate[$dateStr])
+                ? array_keys($submittedByDate[$dateStr])
+                : [];
+
+            $compliance = $this->calculateCompliance($personnel, $submittedUserIdsForDate);
+
             $days[] = [
                 'dateStr' => $dateStr,
                 'weekday' => $cursor->translatedFormat('D'),
                 'dayLabel' => $cursor->format('j').' '.$cursor->translatedFormat('M'),
-                'submitted' => $submitted,
-                'total' => $personnel->count(),
-                'percent' => $personnel->count() > 0 ? (int) round($submitted / $personnel->count() * 100) : 0,
+                'submitted' => $compliance['submitted'],
+                'total' => $compliance['total'],
+                'percent' => $compliance['percent'],
                 'isToday' => $dateStr === $todayStr,
             ];
             $cursor->addDay();
@@ -106,9 +111,69 @@ class DashboardController extends Controller
             ->unique()
             ->all();
 
-        $missingToday = $personnel
-            ->filter(fn (User $user) => ! in_array($user->id, $submittedTodayIds, true))
-            ->pluck('name');
+        $complianceToday = $this->calculateCompliance($personnel, $submittedTodayIds);
+        $missingToday = $complianceToday['missing'];
+
+        // Transform personnel and submittedByDate for compliance matrix rendering (presentation model)
+        $pairs = config('reporting.temporary_reporting_pairs', []);
+
+        $dbPersonnelByEmail = [];
+        foreach ($personnel as $user) {
+            $dbPersonnelByEmail[strtolower(trim($user->email))] = $user;
+        }
+
+        $processedUserIds = [];
+        $viewPersonnel = collect();
+        $viewSubmittedByDate = [];
+
+        foreach ($pairs as $pair) {
+            $emailA = strtolower(trim($pair[0] ?? ''));
+            $emailB = strtolower(trim($pair[1] ?? ''));
+
+            if (isset($dbPersonnelByEmail[$emailA]) && isset($dbPersonnelByEmail[$emailB])) {
+                $userA = $dbPersonnelByEmail[$emailA];
+                $userB = $dbPersonnelByEmail[$emailB];
+
+                $processedUserIds[$userA->id] = true;
+                $processedUserIds[$userB->id] = true;
+
+                $combinedId = "pair:" . min($userA->id, $userB->id) . "_" . max($userA->id, $userB->id);
+                $combinedName = "{$userA->name} / {$userB->name}";
+
+                $viewPersonnel->push((object)[
+                    'id' => $combinedId,
+                    'name' => $combinedName,
+                ]);
+
+                foreach ($submittedByDate as $dateStr => $userIds) {
+                    $submittedA = isset($userIds[$userA->id]);
+                    $submittedB = isset($userIds[$userB->id]);
+                    if ($submittedA || $submittedB) {
+                        $viewSubmittedByDate[$dateStr][$combinedId] = true;
+                    }
+                }
+            }
+        }
+
+        foreach ($personnel as $user) {
+            if (isset($processedUserIds[$user->id])) {
+                continue;
+            }
+
+            $viewPersonnel->push((object)[
+                'id' => (string) $user->id,
+                'name' => $user->name,
+            ]);
+
+            foreach ($submittedByDate as $dateStr => $userIds) {
+                if (isset($userIds[$user->id])) {
+                    $viewSubmittedByDate[$dateStr][(string) $user->id] = true;
+                }
+            }
+        }
+
+        $personnel = $viewPersonnel->sortBy('name')->values();
+        $submittedByDate = $viewSubmittedByDate;
 
         $prevWeekDate = $weekStart->copy()->subWeek()->toDateString();
         $nextWeekDate = $weekStart->copy()->addWeek()->toDateString();
@@ -118,5 +183,69 @@ class DashboardController extends Controller
             'personnel', 'days', 'submittedByDate', 'missingToday',
             'weekStart', 'weekEnd', 'prevWeekDate', 'nextWeekDate'
         ));
+    }
+
+    /**
+     * Calculate compliance statistics for a given list of personnel and submitted user IDs.
+     * Treats configured reporting pairs as a single reporting obligation.
+     */
+    private function calculateCompliance($personnel, array $submittedUserIds): array
+    {
+        $pairs = config('reporting.temporary_reporting_pairs', []);
+
+        $personnelByEmail = [];
+        foreach ($personnel as $user) {
+            $personnelByEmail[strtolower(trim($user->email))] = $user;
+        }
+
+        $processedUserIds = [];
+        $totalObligations = 0;
+        $submittedObligations = 0;
+        $missing = collect();
+
+        foreach ($pairs as $pair) {
+            $emailA = strtolower(trim($pair[0] ?? ''));
+            $emailB = strtolower(trim($pair[1] ?? ''));
+
+            if (isset($personnelByEmail[$emailA]) && isset($personnelByEmail[$emailB])) {
+                $userA = $personnelByEmail[$emailA];
+                $userB = $personnelByEmail[$emailB];
+
+                $processedUserIds[$userA->id] = true;
+                $processedUserIds[$userB->id] = true;
+
+                $totalObligations += 1;
+
+                $submittedA = in_array($userA->id, $submittedUserIds);
+                $submittedB = in_array($userB->id, $submittedUserIds);
+
+                if ($submittedA || $submittedB) {
+                    $submittedObligations += 1;
+                } else {
+                    $missing->push("{$userA->name} / {$userB->name}");
+                }
+            }
+        }
+
+        foreach ($personnel as $user) {
+            if (isset($processedUserIds[$user->id])) {
+                continue;
+            }
+
+            $totalObligations += 1;
+
+            if (in_array($user->id, $submittedUserIds)) {
+                $submittedObligations += 1;
+            } else {
+                $missing->push($user->name);
+            }
+        }
+
+        return [
+            'total' => $totalObligations,
+            'submitted' => $submittedObligations,
+            'percent' => $totalObligations > 0 ? (int) round(($submittedObligations / $totalObligations) * 100) : 0,
+            'missing' => $missing,
+        ];
     }
 }
