@@ -73,6 +73,18 @@
         </select>
     </td>
 
+    {{-- Proof of Work (URL Peroni Cloud) --}}
+    <td class="py-2 px-2">
+        @php
+            $proofOfWorkUrl = is_array($item) ? ($item['proof_of_work_url'] ?? '') : ($item->proof_of_work_url ?? '');
+        @endphp
+        <input type="url"
+               name="work_items[{{ $index }}][proof_of_work_url]"
+               value="{{ $proofOfWorkUrl }}"
+               class="work-item-proof-url w-full bg-white border border-outline-variant/20 rounded-sm text-xs py-1 px-2 focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-mono"
+               placeholder="http://10.88.8.46:1001/photos/...">
+    </td>
+
     {{-- Remove button --}}
     <td class="py-2 px-2 text-center align-middle">
         <button type="button" class="btn-remove-item text-on-surface-variant hover:text-error transition-colors p-1"

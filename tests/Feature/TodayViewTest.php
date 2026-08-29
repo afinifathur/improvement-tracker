@@ -172,18 +172,18 @@ class TodayViewTest extends TestCase
 
     public function test_classification_overdue_current_future(): void
     {
-        $date = '2026-08-15';
+        $date = '2026-08-15'; // Saturday 15 Aug 2026
 
-        // Overdue (planned_end_date < D)
+        // Overdue (planned_end_date 11 Aug -> Tue 11 Aug deadline has working days Wed 12, Thu 13, Fri 14 -> Overdue on Sat 15 Aug)
         $overdue = WorkItem::create([
             'title' => 'Overdue Work',
             'owner_id' => $this->spvA->id,
             'department_id' => $this->deptA->id,
             'area_id' => $this->areaA->id,
             'original_start_date' => '2026-08-10',
-            'original_end_date' => '2026-08-14',
+            'original_end_date' => '2026-08-11',
             'planned_start_date' => '2026-08-10',
-            'planned_end_date' => '2026-08-14',
+            'planned_end_date' => '2026-08-11',
             'status' => 'not_started',
             'created_by' => $this->admin->id,
             'updated_by' => $this->admin->id,
@@ -337,5 +337,153 @@ class TodayViewTest extends TestCase
 
         $this->assertTrue($grouped->has($this->areaA->id));
         $this->assertCount(2, $grouped->get($this->areaA->id));
+    }
+
+    /**
+     * Test Concrete ULIL Acceptance Case: Friday 28 Aug deadline on Saturday 29 Aug is CURRENT (not overdue).
+     * On Tuesday 1 Sep it becomes OVERDUE.
+     */
+    public function test_ulil_concrete_case_friday_deadline_on_saturday_is_current_not_overdue(): void
+    {
+        $item = WorkItem::create([
+            'title' => '3 SHIFT COR DN 80 ISO E01, DN 65 ISO E01, DN 50 ISO E01',
+            'owner_id' => $this->spvA->id,
+            'department_id' => $this->deptA->id,
+            'area_id' => $this->areaA->id,
+            'original_start_date' => '2026-08-28',
+            'original_end_date' => '2026-08-28',
+            'planned_start_date' => '2026-08-28',
+            'planned_end_date' => '2026-08-28',
+            'status' => 'in_progress',
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        // On Saturday 29 Aug 2026: Reference date Saturday (Grace Day 1) -> NOT overdue, classification = current
+        $responseSat = $this->actingAs($this->admin)->get('/today?date=2026-08-29');
+        $responseSat->assertStatus(200);
+
+        $summarySat = $responseSat->viewData('summary');
+        $this->assertEquals(0, $summarySat['overdue']);
+        $this->assertEquals(1, $summarySat['expected']);
+
+        $itemsSat = $responseSat->viewData('groupedItems')->get($this->areaA->id);
+        $this->assertSame('current', $itemsSat->first()->classification);
+
+        // On Tuesday 1 Sep 2026: 3rd working day -> OVERDUE
+        $responseTue = $this->actingAs($this->admin)->get('/today?date=2026-09-01');
+        $responseTue->assertStatus(200);
+
+        $summaryTue = $responseTue->viewData('summary');
+        $this->assertEquals(1, $summaryTue['overdue']);
+
+        $itemsTue = $responseTue->viewData('groupedItems')->get($this->areaA->id);
+        $this->assertSame('overdue', $itemsTue->first()->classification);
+    }
+
+    /**
+     * Test Grace Period Cases A through G on Today View.
+     */
+    public function test_today_grace_period_cases_a_through_g(): void
+    {
+        // Case A, B, C, D: Friday 28 Aug deadline
+        $friItem = WorkItem::create([
+            'title' => 'Friday Deadline Item',
+            'owner_id' => $this->spvA->id,
+            'department_id' => $this->deptA->id,
+            'area_id' => $this->areaA->id,
+            'original_start_date' => '2026-08-28',
+            'original_end_date' => '2026-08-28',
+            'planned_start_date' => '2026-08-28',
+            'planned_end_date' => '2026-08-28',
+            'status' => 'in_progress',
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        // Case A: Sat 29 Aug -> NOT overdue
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-08-29');
+        $this->assertSame('current', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $friItem->id)->classification);
+
+        // Case B: Sun 30 Aug -> NOT overdue
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-08-30');
+        $this->assertSame('current', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $friItem->id)->classification);
+
+        // Case C: Mon 31 Aug -> NOT overdue
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-08-31');
+        $this->assertSame('current', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $friItem->id)->classification);
+
+        // Case D: Tue 1 Sep -> OVERDUE
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-09-01');
+        $this->assertSame('overdue', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $friItem->id)->classification);
+
+        // Case E, F, G: Saturday 29 Aug deadline
+        $satItem = WorkItem::create([
+            'title' => 'Saturday Deadline Item',
+            'owner_id' => $this->spvA->id,
+            'department_id' => $this->deptA->id,
+            'area_id' => $this->areaA->id,
+            'original_start_date' => '2026-08-29',
+            'original_end_date' => '2026-08-29',
+            'planned_start_date' => '2026-08-29',
+            'planned_end_date' => '2026-08-29',
+            'status' => 'not_started',
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        // Case E: Mon 31 Aug (Grace 1) -> NOT overdue
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-08-31');
+        $this->assertSame('current', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $satItem->id)->classification);
+
+        // Case F: Tue 1 Sep (Grace 2) -> NOT overdue
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-09-01');
+        $this->assertSame('current', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $satItem->id)->classification);
+
+        // Case G: Wed 2 Sep (Overdue) -> OVERDUE
+        $res = $this->actingAs($this->admin)->get('/today?date=2026-09-02');
+        $this->assertSame('overdue', $res->viewData('groupedItems')->get($this->areaA->id)->firstWhere('id', $satItem->id)->classification);
+    }
+
+    /**
+     * Test cross-module consistency between Dashboard and Today view.
+     */
+    public function test_cross_module_consistency_dashboard_and_today_view(): void
+    {
+        WorkItem::create([
+            'title' => 'Task Friday Deadline',
+            'owner_id' => $this->spvA->id,
+            'department_id' => $this->deptA->id,
+            'area_id' => $this->areaA->id,
+            'original_start_date' => '2026-08-28',
+            'original_end_date' => '2026-08-28',
+            'planned_start_date' => '2026-08-28',
+            'planned_end_date' => '2026-08-28',
+            'status' => 'in_progress',
+            'created_by' => $this->admin->id,
+            'updated_by' => $this->admin->id,
+        ]);
+
+        // On 29 Aug 2026:
+        // Dashboard overdueCount = 0
+        $dashSat = $this->actingAs($this->admin)->get('/dashboard?date=2026-08-29');
+        $dashSat->assertStatus(200);
+        $this->assertEquals(0, $dashSat->viewData('overdueCount'));
+
+        // Today overdue count = 0
+        $todaySat = $this->actingAs($this->admin)->get('/today?date=2026-08-29');
+        $todaySat->assertStatus(200);
+        $this->assertEquals(0, $todaySat->viewData('summary')['overdue']);
+
+        // On 1 Sep 2026:
+        // Dashboard overdueCount = 1
+        $dashTue = $this->actingAs($this->admin)->get('/dashboard?date=2026-09-01');
+        $dashTue->assertStatus(200);
+        $this->assertEquals(1, $dashTue->viewData('overdueCount'));
+
+        // Today overdue count = 1
+        $todayTue = $this->actingAs($this->admin)->get('/today?date=2026-09-01');
+        $todayTue->assertStatus(200);
+        $this->assertEquals(1, $todayTue->viewData('summary')['overdue']);
     }
 }

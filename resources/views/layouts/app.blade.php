@@ -4,6 +4,10 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>@yield('title', 'Kaizen Tracker')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script>
         (function () {
@@ -303,6 +307,12 @@
                 <a href="{{ Route::has('weekly-plans.closing') ? route('weekly-plans.closing') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-white/80 hover:text-white hover:bg-white/8 transition-colors {{ request()->routeIs('weekly-plans.closing') ? 'bg-white/16 text-white border-l-2 border-white font-semibold pl-2' : '' }}">
                     <span class="material-symbols-outlined text-[18px]">assignment_turned_in</span>
                     <span>Penutupan</span>
+                </a>
+                @endif
+                @if(auth()->user()->isAdmin())
+                <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-white/80 hover:text-white hover:bg-white/8 transition-colors {{ request()->routeIs('users.*') ? 'bg-white/16 text-white border-l-2 border-white font-semibold pl-2' : '' }}">
+                    <span class="material-symbols-outlined text-[18px]">badge</span>
+                    <span>Kelola Personel</span>
                 </a>
                 @endif
                 <a href="{{ Route::has('rankings') ? route('rankings') : '#' }}" class="flex items-center gap-2.5 px-2.5 py-1.5 rounded text-white/80 hover:text-white hover:bg-white/8 transition-colors {{ request()->routeIs('rankings') ? 'bg-white/16 text-white border-l-2 border-white font-semibold pl-2' : '' }}">

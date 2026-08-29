@@ -128,6 +128,7 @@
                                     <th class="w-24">BATAS WAKTU</th>
                                     <th class="w-24 text-green-700">SELESAI</th>
                                     <th class="w-24">DIPERBARUI</th>
+                                    <th class="w-32 text-center">PROOF OF WORK</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -164,6 +165,23 @@
                                         </td>
                                         <td>
                                             <span class="text-slate-400 text-[10px]">{{ $item->updated_at ? $item->updated_at->format('d M Y') : '-' }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if(!empty($item->proof_of_work_url))
+                                                <a href="{{ $item->proof_of_work_url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 border border-blue-200 transition-colors shadow-xs">
+                                                    <span class="material-symbols-outlined text-[13px]">link</span>
+                                                    <span>Buka Evidence</span>
+                                                </a>
+                                            @else
+                                                <button type="button"
+                                                        disabled
+                                                        class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed select-none">
+                                                    <span>Proof</span>
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -203,6 +221,7 @@
                                 <th class="w-24">BATAS WAKTU</th>
                                 <th class="w-24 text-green-700">SELESAI</th>
                                 <th class="w-24">DIPERBARUI</th>
+                                <th class="w-32 text-center">PROOF OF WORK</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -239,6 +258,23 @@
                                     </td>
                                     <td>
                                         <span class="text-slate-400 text-[10px]">{{ $item->updated_at ? $item->updated_at->format('d M Y') : '-' }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if(!empty($item->proof_of_work_url))
+                                            <a href="{{ $item->proof_of_work_url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 border border-blue-200 transition-colors shadow-xs">
+                                                <span class="material-symbols-outlined text-[13px]">link</span>
+                                                <span>Buka Evidence</span>
+                                            </a>
+                                        @else
+                                            <button type="button"
+                                                    disabled
+                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed select-none">
+                                                <span>Proof</span>
+                                            </button>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

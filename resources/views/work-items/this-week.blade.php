@@ -143,20 +143,113 @@
                 <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tidak ada rencana mingguan untuk minggu ini</p>
             </div>
         @else
-            <div class="space-y-4">
-                @foreach($weeklyPlans as $plan)
-                    @php
-                        $planItems = $linkedItemsGrouped->get($plan->id) ?? collect();
-                        $totalCount = $planItems->count();
-                        $completedCount = $planItems->where('status.value', 'completed')->count();
-                    @endphp
-                    <div class="bg-white border border-slate-200 rounded-sm shadow-sm p-6 space-y-4">
-                        <!-- Personnel & Department -->
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                {{ $plan->user->name }} &mdash; {{ $plan->user->department->name ?? 'N/A' }}
-                            </span>
-                            <div>
+            <!-- Weekly Plans Overview Table -->
+            <div class="table-container bg-white border border-slate-200 rounded-sm shadow-sm overflow-x-auto">
+                <table class="table-dense w-full">
+                    <thead>
+                        <tr>
+                            <th class="w-8 text-center whitespace-nowrap">#</th>
+                            <th class="w-36 whitespace-nowrap">PENANGGUNG JAWAB</th>
+                            <th class="w-28 whitespace-nowrap">DEPARTEMEN</th>
+                            <th class="w-24 whitespace-nowrap">JENIS</th>
+                            <th class="min-w-[160px] max-w-[260px]">SASARAN / RENCANA</th>
+                            <th class="min-w-[220px] max-w-[340px]">TARGET</th>
+                            <th class="w-28 text-center whitespace-nowrap">PROGRESS</th>
+                            <th class="w-28 text-center whitespace-nowrap">STATUS</th>
+                            <th class="w-20 text-center whitespace-nowrap">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($weeklyPlans as $index => $plan)
+                            @php
+                                $planItems = $linkedItemsGrouped->get($plan->id) ?? collect();
+                                $totalCount = $planItems->count();
+                                $completedCount = $planItems->where('status.value', 'completed')->count();
+                                $pct = $totalCount > 0 ? (int) round(($completedCount / $totalCount) * 100) : 0;
+                            @endphp
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                <td class="text-center font-bold text-slate-400 text-[11px] whitespace-nowrap">{{ $index + 1 }}</td>
+                                <td class="whitespace-nowrap">
+                                    <div class="flex items-center gap-2">
+                                        <x-avatar class="w-4 h-4 rounded grayscale" :name="$plan->user->name ?? 'User'" background="f1f5f9" color="64748b"/>
+                                        <span class="font-bold text-slate-800 text-xs">{{ $plan->user->name }}</span>
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap">
+                                    <span class="font-semibold text-slate-600 text-[11px]">{{ $plan->user->department->name ?? 'N/A' }}</span>
+                                </td>
+                                <td class="whitespace-nowrap">
+                                    @if($plan->category === 'improvement')
+                                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/60 rounded text-[9px] font-extrabold uppercase tracking-wide">Improvement</span>
+                                    @elseif($plan->category === 'problem')
+                                        <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded text-[9px] font-extrabold uppercase tracking-wide">Problem</span>
+                                    @else
+                                        <span class="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[9px] font-extrabold uppercase tracking-wide">{{ ucfirst($plan->category) }}</span>
+                                    @endif
+                                </td>
+                                <td class="whitespace-normal break-words">
+                                    <p class="font-bold text-slate-800 text-xs tracking-tight uppercase leading-snug whitespace-normal break-words">{{ $plan->title }}</p>
+                                </td>
+                                <td class="whitespace-normal break-words">
+                                    <div class="text-slate-600 text-[11px] font-medium leading-relaxed whitespace-normal break-words">
+                                        {{ $plan->expected_output ?? '-' }}
+                                    </div>
+                                </td>
+                                <td class="text-center whitespace-nowrap">
+                                    <div class="flex flex-col items-center gap-1 w-24 mx-auto">
+                                        <div class="flex items-center justify-between w-full text-[10px] font-bold text-slate-700">
+                                            <span class="tabular-nums text-slate-600">{{ $completedCount }} / {{ $totalCount }}</span>
+                                            <span class="tabular-nums {{ $pct === 100 ? 'text-emerald-600 font-extrabold' : 'text-slate-600' }}">{{ $pct }}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                            <div class="h-full transition-all duration-300 {{ $pct === 100 ? 'bg-emerald-600' : ($pct > 0 ? 'bg-blue-600' : 'bg-slate-300') }}" style="width: {{ $pct }}%;"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center whitespace-nowrap">
+                                    @if($plan->status === 'planned')
+                                        <span class="badge-status bg-slate-100 text-slate-600 border border-slate-200/50">Direncanakan</span>
+                                    @elseif($plan->status === 'completed')
+                                        <span class="badge-status badge-completed">Selesai</span>
+                                    @elseif($plan->status === 'completed_no_impact')
+                                        <span class="badge-status bg-emerald-50 text-emerald-600 border border-emerald-200/50">Selesai Tanpa Dampak</span>
+                                    @elseif($plan->status === 'not_completed')
+                                        <span class="badge-status badge-cancelled">Gagal</span>
+                                    @elseif($plan->status === 'extended')
+                                        <span class="badge-status badge-in-progress">Diperpanjang</span>
+                                    @endif
+                                </td>
+                                <td class="text-center whitespace-nowrap">
+                                    <button type="button" onclick="openPlanDetail({{ $plan->id }})" class="inline-flex items-center justify-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded text-[10px] font-bold text-slate-700 uppercase tracking-wider transition-colors shadow-sm whitespace-nowrap shrink-0">
+                                        <span class="material-symbols-outlined text-[13px] text-slate-500">visibility</span> DETAIL
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Detail Modals for each Weekly Plan -->
+            @foreach($weeklyPlans as $plan)
+                @php
+                    $planItems = $linkedItemsGrouped->get($plan->id) ?? collect();
+                    $totalCount = $planItems->count();
+                    $completedCount = $planItems->where('status.value', 'completed')->count();
+                    $pct = $totalCount > 0 ? (int) round(($completedCount / $totalCount) * 100) : 0;
+                @endphp
+                <div id="plan-detail-modal-{{ $plan->id }}" class="plan-detail-modal fixed inset-0 z-[90] hidden flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto" onclick="handleBackdropClick(event, {{ $plan->id }})">
+                    <div class="bg-white w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden border border-slate-200 my-8 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                            <div class="flex items-center gap-3">
+                                <x-avatar class="w-6 h-6 rounded grayscale" :name="$plan->user->name ?? 'User'" background="f1f5f9" color="64748b"/>
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800 uppercase tracking-wide">{{ $plan->user->name }}</span>
+                                    <span class="text-slate-400 text-xs font-medium">&mdash; {{ $plan->user->department->name ?? 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
                                 @if($plan->status === 'planned')
                                     <span class="badge-status bg-slate-100 text-slate-600 border border-slate-200/50">Direncanakan</span>
                                 @elseif($plan->status === 'completed')
@@ -168,84 +261,102 @@
                                 @elseif($plan->status === 'extended')
                                     <span class="badge-status badge-in-progress">Diperpanjang</span>
                                 @endif
+                                <button type="button" onclick="closePlanDetail({{ $plan->id }})" class="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100 transition-colors flex items-center justify-center" title="Tutup">
+                                    <span class="material-symbols-outlined text-[20px]">close</span>
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Title and Metadata -->
-                        <div>
-                            <h4 class="text-sm font-extrabold text-slate-800 tracking-tight uppercase">{{ $plan->title }}</h4>
-                            <p class="text-xs text-slate-400 mt-1 uppercase tracking-wide font-semibold">
-                                {{ ucfirst($plan->category) }} &middot; 
-                                {{ $plan->impact_level === 'low' ? 'Rendah' : ($plan->impact_level === 'medium' ? 'Sedang' : 'Tinggi') }} &middot; 
-                                Minggu {{ \Carbon\Carbon::parse($plan->week_start_date)->isoWeek() }}
-                            </p>
-                        </div>
+                        <!-- Modal Body (Scrollable) -->
+                        <div class="p-6 space-y-5 overflow-y-auto flex-1">
+                            <!-- Title & Classification -->
+                            <div>
+                                <h4 class="text-base font-extrabold text-slate-800 tracking-tight uppercase">{{ $plan->title }}</h4>
+                                <p class="text-xs text-slate-400 mt-1 uppercase tracking-wide font-semibold">
+                                    {{ ucfirst($plan->category) }} &middot; 
+                                    {{ $plan->impact_level === 'low' ? 'Rendah' : ($plan->impact_level === 'medium' ? 'Sedang' : 'Tinggi') }} &middot; 
+                                    Minggu {{ \Carbon\Carbon::parse($plan->week_start_date)->isoWeek() }}
+                                </p>
+                                @if($plan->expected_output)
+                                    <div class="mt-2.5 text-xs text-slate-600 bg-slate-50 p-3 rounded border border-slate-100 leading-relaxed whitespace-normal break-words">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Target Sasaran</span>
+                                        {{ $plan->expected_output }}
+                                    </div>
+                                @endif
+                            </div>
 
-                        <!-- Progress Information -->
-                        <div class="bg-slate-50 border border-slate-100 rounded-sm p-2 px-3 text-xs flex justify-between items-center">
-                            <span class="text-slate-500 font-medium">Progress</span>
-                            <span class="font-bold text-slate-800">{{ $completedCount }} / {{ $totalCount }} pekerjaan selesai</span>
-                        </div>
-
-                        <!-- Linked Daily WorkItems -->
-                        <div class="space-y-2">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">RIWAYAT PEKERJAAN HARIAN</span>
-                            @if($planItems->isEmpty())
-                                <p class="text-xs text-slate-400 italic">Belum ada pekerjaan harian yang ditautkan ke rencana ini</p>
-                            @else
-                                <div class="border border-slate-100 rounded-sm divide-y divide-slate-50 bg-white">
-                                    @foreach($planItems as $item)
-                                        <div class="flex items-center text-xs justify-between p-2 px-3">
-                                            <div class="flex items-center gap-3">
-                                                <span class="text-slate-400 font-mono whitespace-nowrap">{{ $item->planned_start_date ? \Carbon\Carbon::parse($item->planned_start_date)->format('d M') : '-' }}</span>
-                                                <span class="text-slate-300">|</span>
-                                                <span class="font-bold text-slate-700">{{ $item->title }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-slate-300">|</span>
-                                                <span class="badge-status
-                                                    @if($item->status->value === 'completed') badge-completed
-                                                    @elseif($item->status->value === 'cancelled') badge-cancelled
-                                                    @elseif($item->status->value === 'blocked') badge-blocked
-                                                    @elseif($item->status->value === 'in_progress') badge-in-progress
-                                                    @else badge-not-started
-                                                    @endif text-[9px] font-bold">
-                                                    {{ $item->status->value === 'not_started' ? 'Belum Mulai' : ($item->status->value === 'in_progress' ? 'Berjalan' : ($item->status->value === 'blocked' ? 'Terblokir' : ($item->status->value === 'completed' ? 'Selesai' : 'Dibatalkan'))) }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    @endforeach
+                            <!-- Progress Information -->
+                            <div class="bg-slate-50 border border-slate-100 rounded-sm p-3.5 space-y-2">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Progress</span>
+                                    <span class="font-bold text-slate-800 tabular-nums">{{ $completedCount }} / {{ $totalCount }} pekerjaan selesai ({{ $pct }}%)</span>
                                 </div>
-                            @endif
+                                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                    <div class="h-full transition-all duration-300 {{ $pct === 100 ? 'bg-emerald-600' : ($pct > 0 ? 'bg-blue-600' : 'bg-slate-300') }}" style="width: {{ $pct }}%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Linked Daily WorkItems -->
+                            <div class="space-y-2">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">RIWAYAT PEKERJAAN HARIAN</span>
+                                @if($planItems->isEmpty())
+                                    <div class="bg-slate-50 border border-dashed border-slate-200 rounded p-4 text-center">
+                                        <p class="text-xs text-slate-400 italic">BELUM ADA PEKERJAAN HARIAN YANG DITAUTKAN KE RENCANA INI</p>
+                                    </div>
+                                @else
+                                    <div class="border border-slate-200 rounded-sm divide-y divide-slate-100 bg-white">
+                                        @foreach($planItems as $item)
+                                            <div class="flex items-center text-xs justify-between p-2.5 px-3 hover:bg-slate-50/50 transition-colors">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="text-slate-400 font-mono text-[11px] whitespace-nowrap">{{ $item->planned_start_date ? \Carbon\Carbon::parse($item->planned_start_date)->format('d M') : '-' }}</span>
+                                                    <span class="text-slate-300">|</span>
+                                                    <span class="font-bold text-slate-700">{{ $item->title }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="badge-status
+                                                        @if($item->status->value === 'completed') badge-completed
+                                                        @elseif($item->status->value === 'cancelled') badge-cancelled
+                                                        @elseif($item->status->value === 'blocked') badge-blocked
+                                                        @elseif($item->status->value === 'in_progress') badge-in-progress
+                                                        @else badge-not-started
+                                                        @endif text-[9px] font-bold">
+                                                        {{ $item->status->value === 'not_started' ? 'Belum Mulai' : ($item->status->value === 'in_progress' ? 'Berjalan' : ($item->status->value === 'blocked' ? 'Terblokir' : ($item->status->value === 'completed' ? 'Selesai' : 'Dibatalkan'))) }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
                         </div>
 
-                        <!-- Evaluation Actions (Only visible/actionable for Admin) -->
+                        <!-- Modal Footer: Evaluation Actions (Only visible/actionable for Admin) -->
                         @if(auth()->user()->isAdmin())
-                            <div class="pt-3 border-t border-slate-100 space-y-2">
+                            <div class="p-4 px-6 border-t border-slate-100 bg-slate-50/60 space-y-2">
                                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">EVALUASI</span>
                                 
                                 <div class="flex items-center gap-2 flex-wrap" id="eval-badge-container-{{ $plan->id }}">
                                     @if($plan->status !== 'planned')
-                                        <button onclick="toggleEvalButtons({{ $plan->id }})" class="text-[10px] font-bold text-primary uppercase hover:underline flex items-center gap-1">
+                                        <button type="button" onclick="toggleEvalButtons({{ $plan->id }})" class="text-[10px] font-bold text-primary uppercase hover:underline flex items-center gap-1">
                                             <span class="material-symbols-outlined text-xs">edit</span> Ubah Evaluasi
                                         </button>
                                     @endif
                                 </div>
 
                                 <div class="flex items-center gap-2 flex-wrap {{ $plan->status !== 'planned' ? 'hidden' : '' }}" id="eval-buttons-container-{{ $plan->id }}">
-                                    <button onclick="openEvaluationModal({{ $plan->id }}, 'completed')" class="px-3 py-1.5 rounded-sm bg-primary text-white text-[10px] font-bold uppercase tracking-wider hover:bg-primary/95 transition-all">Selesai</button>
-                                    <button onclick="openEvaluationModal({{ $plan->id }}, 'completed_no_impact')" class="px-3 py-1.5 rounded-sm bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-200 transition-all">Selesai Tanpa Dampak</button>
-                                    <button onclick="updateStatus({{ $plan->id }}, 'not_completed')" class="px-3 py-1.5 rounded-sm bg-red-50 border border-red-200 text-red-600 text-[10px] font-bold uppercase tracking-wider hover:bg-red-100 transition-all">Gagal</button>
-                                    <button onclick="openExtensionModal({{ $plan->id }}, '{{ $plan->week_end_date ? \Carbon\Carbon::parse($plan->week_end_date)->toDateString() : '' }}')" class="px-3 py-1.5 rounded-sm bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">Perpanjang</button>
+                                    <button type="button" onclick="openEvaluationModal({{ $plan->id }}, 'completed')" class="px-3 py-1.5 rounded-sm bg-primary text-white text-[10px] font-bold uppercase tracking-wider hover:bg-primary/95 transition-all">Selesai</button>
+                                    <button type="button" onclick="openEvaluationModal({{ $plan->id }}, 'completed_no_impact')" class="px-3 py-1.5 rounded-sm bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-200 transition-all">Selesai Tanpa Dampak</button>
+                                    <button type="button" onclick="updateStatus({{ $plan->id }}, 'not_completed')" class="px-3 py-1.5 rounded-sm bg-red-50 border border-red-200 text-red-600 text-[10px] font-bold uppercase tracking-wider hover:bg-red-100 transition-all">Gagal</button>
+                                    <button type="button" onclick="openExtensionModal({{ $plan->id }}, '{{ $plan->week_end_date ? \Carbon\Carbon::parse($plan->week_end_date)->toDateString() : '' }}')" class="px-3 py-1.5 rounded-sm bg-amber-50 border border-amber-200 text-amber-600 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all">Perpanjang</button>
                                     @if($plan->status !== 'planned')
-                                        <button onclick="toggleEvalButtons({{ $plan->id }})" class="px-3 py-1.5 rounded-sm bg-slate-50 border border-slate-200 text-slate-400 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-100 transition-all">Batal</button>
+                                        <button type="button" onclick="toggleEvalButtons({{ $plan->id }})" class="px-3 py-1.5 rounded-sm bg-slate-50 border border-slate-200 text-slate-400 text-[10px] font-bold uppercase tracking-wider hover:bg-slate-100 transition-all">Batal</button>
                                     @endif
                                 </div>
                             </div>
                         @endif
                     </div>
-                @endforeach
-            </div>
+                </div>
+            @endforeach
         @endif
     </div>
 
@@ -507,6 +618,39 @@
 
 @section('scripts')
 <script>
+    function openPlanDetail(id) {
+        const modal = document.getElementById('plan-detail-modal-' + id);
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closePlanDetail(id) {
+        const modal = document.getElementById('plan-detail-modal-' + id);
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleBackdropClick(event, id) {
+        if (event.target === event.currentTarget) {
+            closePlanDetail(id);
+        }
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('.plan-detail-modal').forEach(function(modal) {
+                modal.classList.add('hidden');
+            });
+            closeEvaluationModal();
+            closeExtensionModal();
+            document.body.style.overflow = '';
+        }
+    });
+
     function toggleArea(id) {
         const el = document.getElementById(id);
         const icon = document.getElementById('icon-' + id);

@@ -1,6 +1,11 @@
 @php
     $isEdit = ! is_null($report);
     $formAction = $isEdit ? route('daily-reports.update', $report) : route('daily-reports.store');
+    $currentCarbon = \Carbon\Carbon::parse($date);
+    $prevDate = $currentCarbon->copy()->subDay()->toDateString();
+    $nextDate = $currentCarbon->copy()->addDay()->toDateString();
+    $todayDate = now()->toDateString();
+    $isToday = $date === $todayDate;
 @endphp
 
 <div class="p-6 max-w-6xl mx-auto w-full space-y-6">
@@ -8,16 +13,49 @@
     <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
             <nav class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">
-                <a href="{{ route('daily-reports.index', ['date' => $date]) }}" class="hover:text-primary">Laporan Harian</a>
+                <a href="{{ route('daily-reports.index', ['date' => $date]) }}" class="hover:text-primary date-nav-link">Laporan Harian</a>
                 <span class="material-symbols-outlined text-[12px]">chevron_right</span>
                 <span class="text-primary">{{ $isEdit ? 'Ubah' : 'Baru' }} Laporan</span>
             </nav>
             <h2 class="text-2xl font-bold tracking-tight text-inverse-surface">Laporan Harian</h2>
         </div>
-        <a href="{{ route('daily-reports.index', ['date' => $date]) }}"
-           class="px-3 py-1.5 rounded-sm bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider hover:bg-tertiary hover:text-white transition-all self-start md:self-auto">
-            Kembali
-        </a>
+
+        <div class="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            @if($person)
+                <div class="flex items-center bg-white border border-slate-200 rounded-sm shadow-xs p-0.5">
+                    <a href="{{ route('daily-reports.navigate', ['person' => $person->id, 'date' => $prevDate, 'area_id' => $areaId]) }}"
+                       class="date-nav-link inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:text-primary hover:bg-slate-50 rounded transition-colors"
+                       title="Hari Sebelumnya ({{ \Carbon\Carbon::parse($prevDate)->format('d M Y') }})">
+                        <span class="material-symbols-outlined text-[15px]">arrow_back</span>
+                        <span>Hari Sebelumnya</span>
+                    </a>
+
+                    <div class="px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-slate-800 border-x border-slate-200 bg-slate-50/70">
+                        {{ $currentCarbon->format('d M Y') }}
+                    </div>
+
+                    @if(! $isToday)
+                        <a href="{{ route('daily-reports.navigate', ['person' => $person->id, 'date' => $todayDate, 'area_id' => $areaId]) }}"
+                           class="date-nav-link inline-flex items-center px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-50/80 hover:bg-blue-100/80 border-r border-slate-200 transition-colors"
+                           title="Lompat ke Hari Ini ({{ \Carbon\Carbon::parse($todayDate)->format('d M Y') }})">
+                            Hari Ini
+                        </a>
+                    @endif
+
+                    <a href="{{ route('daily-reports.navigate', ['person' => $person->id, 'date' => $nextDate, 'area_id' => $areaId]) }}"
+                       class="date-nav-link inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600 hover:text-primary hover:bg-slate-50 rounded transition-colors"
+                       title="Hari Berikutnya ({{ \Carbon\Carbon::parse($nextDate)->format('d M Y') }})">
+                        <span>Hari Berikutnya</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                    </a>
+                </div>
+            @endif
+
+            <a href="{{ route('daily-reports.index', ['date' => $date]) }}"
+               class="date-nav-link px-3 py-1.5 rounded-sm bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider hover:bg-tertiary hover:text-white transition-all">
+                Kembali
+            </a>
+        </div>
     </div>
 
     {{-- Validation error summary --}}
@@ -34,6 +72,25 @@
         </div>
     </div>
     @endif
+
+    {{-- Existing Report Notification Banner --}}
+    <div id="existing-report-banner" class="hidden bg-blue-50 border border-blue-200 text-blue-900 rounded-sm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div class="flex items-start gap-3">
+            <span class="material-symbols-outlined text-blue-600 text-xl shrink-0 mt-0.5">info</span>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-blue-900 uppercase tracking-wide">✓ Laporan Sudah Ada</span>
+                    <span class="text-[9px] bg-blue-100 text-blue-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">Mode Lanjutan / Tambah Pekerjaan</span>
+                </div>
+                <p class="text-xs text-blue-800 mt-1">
+                    Laporan harian untuk <strong id="banner-person-name"></strong> tanggal <strong id="banner-date"></strong> di area <strong id="banner-area-name"></strong> sudah tercatat (<span id="banner-item-count">0</span> pekerjaan). Anda dapat langsung menambahkan pekerjaan baru di bawah ini.
+                </p>
+            </div>
+        </div>
+        <a id="banner-edit-link" href="#" class="px-3 py-1.5 bg-white border border-blue-200 hover:border-blue-300 text-blue-700 hover:text-blue-900 rounded text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 text-center shadow-sm">
+            Buka Halaman Edit Penuh &rarr;
+        </a>
+    </div>
 
     {{-- Main form --}}
     <form id="daily-report-form" action="{{ $formAction }}" method="POST" class="space-y-6">
@@ -171,10 +228,11 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-outline-variant/25 bg-slate-50 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                            <th class="py-2.5 px-3 min-w-[320px] w-[40%]">Kegiatan & Deskripsi</th>
-                            <th class="py-2.5 px-3 min-w-[200px] w-[25%]">Rencana Mingguan Terkait</th>
-                            <th class="py-2.5 px-3 min-w-[200px] w-[20%]">Tanggal (Mulai – Selesai)</th>
-                            <th class="py-2.5 px-3 min-w-[120px] w-[15%]">Status</th>
+                            <th class="py-2.5 px-3 min-w-[280px] w-[32%]">Kegiatan & Deskripsi</th>
+                            <th class="py-2.5 px-3 min-w-[180px] w-[20%]">Rencana Mingguan</th>
+                            <th class="py-2.5 px-3 min-w-[180px] w-[18%]">Tanggal (Mulai – Selesai)</th>
+                            <th class="py-2.5 px-3 min-w-[110px] w-[12%]">Status</th>
+                            <th class="py-2.5 px-3 min-w-[170px] w-[18%]">Proof of Work (Peroni Cloud)</th>
                             <th class="py-2.5 px-3 w-10 text-center"></th>
                         </tr>
                     </thead>
@@ -268,6 +326,14 @@
                 <option value="completed" class="text-green-700">Selesai</option>
                 <option value="cancelled" class="text-red-700">Dibatalkan</option>
             </select>
+        </td>
+
+        {{-- Proof of Work (URL Peroni Cloud) --}}
+        <td class="py-2 px-2">
+            <input type="url"
+                   name="work_items[__INDEX__][proof_of_work_url]"
+                   class="work-item-proof-url w-full bg-white border border-outline-variant/20 rounded-sm text-xs py-1 px-2 focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-slate-400 font-mono"
+                   placeholder="http://10.88.8.46:1001/photos/...">
         </td>
 
         {{-- Remove button --}}
@@ -498,6 +564,102 @@
     const selectPerson = document.getElementById('select-reported-by');
     const inputDate = document.getElementById('input-report-date');
     const selectArea = document.getElementById('select-area-id');
+    let isAppendMode = false;
+
+    function renderAppendWorkItems(existingItems) {
+        const listBody = document.getElementById('work-item-list-body');
+        listBody.innerHTML = '';
+        workItemIndex = 0;
+
+        existingItems.forEach((item) => {
+            const template = document.getElementById('work-item-template');
+            let html = template.innerHTML
+                .replaceAll('__INDEX__', workItemIndex)
+                .replaceAll('__DEFAULT_DATE__', getDefaultDate());
+
+            const wrapper = document.createElement('tbody');
+            wrapper.innerHTML = html.trim();
+            const row = wrapper.firstElementChild;
+
+            // Set ID
+            const idInput = row.querySelector('input[name*="[id]"]');
+            if (idInput) idInput.value = item.id;
+
+            // Set Title & Description
+            const titleInput = row.querySelector('.work-item-title');
+            if (titleInput) titleInput.value = item.title;
+
+            const descInput = row.querySelector('input[name*="[description]"]');
+            if (descInput) descInput.value = item.description || '';
+
+            // Set Weekly Plan
+            const weeklySelect = row.querySelector('.work-item-weekly-plan');
+            weeklySelect.innerHTML = '<option value="">— Tidak terkait rencana —</option>';
+            currentWeeklyPlans.forEach(plan => {
+                const opt = document.createElement('option');
+                opt.value = plan.id;
+                opt.textContent = plan.title;
+                if (item.weekly_plan_id == plan.id) {
+                    opt.selected = true;
+                }
+                weeklySelect.appendChild(opt);
+            });
+
+            // Set Dates
+            const startInput = row.querySelector('input[name*="[planned_start_date]"]');
+            const endInput = row.querySelector('input[name*="[planned_end_date]"]');
+            if (startInput && item.planned_start_date) startInput.value = item.planned_start_date;
+            if (endInput && item.planned_end_date) endInput.value = item.planned_end_date;
+
+            // Set Status
+            const statusSelect = row.querySelector('.work-item-status');
+            if (statusSelect && item.status) {
+                statusSelect.value = item.status;
+                styleStatusSelect(statusSelect);
+            }
+
+            // Set Proof of Work URL
+            const proofInput = row.querySelector('.work-item-proof-url');
+            if (proofInput && item.proof_of_work_url) {
+                proofInput.value = item.proof_of_work_url;
+            }
+
+            // Visual badge "Tersimpan"
+            const titleCell = row.querySelector('td:first-child');
+            if (titleCell) {
+                const badge = document.createElement('div');
+                badge.className = 'flex items-center gap-1 mt-0.5';
+                badge.innerHTML = '<span class="px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide bg-slate-100 text-slate-500 border border-slate-200/60 rounded">Tersimpan</span>';
+                titleCell.appendChild(badge);
+            }
+
+            row.querySelector('.btn-remove-item').addEventListener('click', function () {
+                row.remove();
+                reindex();
+            });
+
+            if (titleInput) {
+                titleInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addWorkItem();
+                        const allRows = document.querySelectorAll('#work-item-list-body .work-item-row');
+                        if (allRows.length > 0) {
+                            const lastRow = allRows[allRows.length - 1];
+                            const lastTitle = lastRow.querySelector('.work-item-title');
+                            if (lastTitle) lastTitle.focus();
+                        }
+                    }
+                });
+            }
+
+            listBody.appendChild(row);
+            workItemIndex++;
+        });
+
+        // Always append one blank new work item row below existing ones
+        addWorkItem();
+    }
 
     function fetchOptions() {
         if (!selectPerson || !inputDate) return;
@@ -517,18 +679,92 @@
                 currentAreas = data.areas;
                 updateAreaDropdownOptions();
 
-                if (data.has_active_assignments && data.areas.length === 1) {
-                    const hiddenAreaInput = document.getElementById('select-area-id');
-                    const searchAreaInput = document.getElementById('area-search-input');
-                    if (hiddenAreaInput && searchAreaInput) {
-                        hiddenAreaInput.value = data.areas[0].id;
-                        searchAreaInput.value = data.areas[0].name;
-                        updateAreaDropdownOptions();
-                    }
-                }
-
                 currentWeeklyPlans = data.weekly_plans;
                 updateAllWeeklyPlanDropdowns();
+
+                const banner = document.getElementById('existing-report-banner');
+                const form = document.getElementById('daily-report-form');
+                const submitLabel = document.getElementById('btn-submit-label');
+
+                if (data.existing_report && !{{ $isEdit ? 'true' : 'false' }}) {
+                    isAppendMode = true;
+
+                    // Show notification banner
+                    if (banner) {
+                        banner.classList.remove('hidden');
+                        const personNameInput = document.getElementById('personnel-search-input');
+                        const personName = personNameInput ? personNameInput.value : 'Personel';
+
+                        document.getElementById('banner-person-name').textContent = personName;
+                        document.getElementById('banner-date').textContent = data.existing_report.report_date;
+                        document.getElementById('banner-area-name').textContent = data.existing_report.area_name;
+                        document.getElementById('banner-item-count').textContent = data.existing_report.work_items.length;
+                        document.getElementById('banner-edit-link').href = data.existing_report.edit_url;
+                    }
+
+                    // Set Area
+                    if (data.existing_report.area_id) {
+                        const hiddenAreaInput = document.getElementById('select-area-id');
+                        const searchAreaInput = document.getElementById('area-search-input');
+                        if (hiddenAreaInput && searchAreaInput) {
+                            hiddenAreaInput.value = data.existing_report.area_id;
+                            searchAreaInput.value = data.existing_report.area_name;
+                            updateAreaDropdownOptions();
+                        }
+                    }
+
+                    // Set today_result if empty
+                    const todayResultTextarea = document.querySelector('textarea[name="today_result"]');
+                    if (todayResultTextarea && !todayResultTextarea.value.trim() && data.existing_report.today_result) {
+                        todayResultTextarea.value = data.existing_report.today_result;
+                    }
+
+                    // Update form action & method to PUT existing report
+                    form.action = data.existing_report.update_url;
+                    let methodInput = document.getElementById('append-method-override');
+                    if (!methodInput) {
+                        methodInput = document.createElement('input');
+                        methodInput.type = 'hidden';
+                        methodInput.name = '_method';
+                        methodInput.id = 'append-method-override';
+                        form.appendChild(methodInput);
+                    }
+                    methodInput.value = 'PUT';
+
+                    if (submitLabel) {
+                        submitLabel.textContent = 'Simpan Tambahan Pekerjaan';
+                    }
+
+                    // Render existing items + 1 new blank row
+                    renderAppendWorkItems(data.existing_report.work_items);
+
+                } else if (!{{ $isEdit ? 'true' : 'false' }}) {
+                    if (banner) banner.classList.add('hidden');
+
+                    if (isAppendMode) {
+                        isAppendMode = false;
+                        form.action = "{{ route('daily-reports.store') }}";
+                        const methodInput = document.getElementById('append-method-override');
+                        if (methodInput) methodInput.remove();
+
+                        if (submitLabel) submitLabel.textContent = 'Simpan Laporan';
+
+                        const listBody = document.getElementById('work-item-list-body');
+                        listBody.innerHTML = '';
+                        workItemIndex = 0;
+                        addWorkItem();
+                    }
+
+                    if (data.has_active_assignments && data.areas.length === 1) {
+                        const hiddenAreaInput = document.getElementById('select-area-id');
+                        const searchAreaInput = document.getElementById('area-search-input');
+                        if (hiddenAreaInput && searchAreaInput) {
+                            hiddenAreaInput.value = data.areas[0].id;
+                            searchAreaInput.value = data.areas[0].name;
+                            updateAreaDropdownOptions();
+                        }
+                    }
+                }
             })
             .catch(err => {
                 console.error(err);
@@ -626,7 +862,33 @@
         workItemIndex = rows.length;
     }
 
-    document.getElementById('btn-add-work-item').addEventListener('click', addWorkItem);
+    let isFormDirty = false;
+
+    const reportForm = document.getElementById('daily-report-form');
+    if (reportForm) {
+        reportForm.addEventListener('input', function () {
+            isFormDirty = true;
+        });
+        reportForm.addEventListener('change', function () {
+            isFormDirty = true;
+        });
+    }
+
+    document.querySelectorAll('.date-nav-link').forEach(link => {
+        link.addEventListener('click', function (e) {
+            if (isFormDirty) {
+                if (!confirm('Perubahan belum disimpan. Lanjut tanpa menyimpan?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    });
+
+    document.getElementById('btn-add-work-item').addEventListener('click', function() {
+        isFormDirty = true;
+        addWorkItem();
+    });
 
     document.getElementById('work-item-list-body').addEventListener('change', function (e) {
         if (e.target.classList.contains('work-item-status')) {
@@ -635,6 +897,7 @@
     });
 
     document.getElementById('daily-report-form').addEventListener('submit', function () {
+        isFormDirty = false;
         reindex();
         const btn = document.getElementById('btn-submit');
         const label = document.getElementById('btn-submit-label');
@@ -650,6 +913,9 @@
         initExistingRows();
         if (document.getElementById('work-item-list-body').children.length === 0) {
             addWorkItem();
+        }
+        if (selectPerson && selectPerson.value && !{{ $isEdit ? 'true' : 'false' }}) {
+            fetchOptions();
         }
     });
 })();

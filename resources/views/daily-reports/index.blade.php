@@ -56,61 +56,88 @@
     </div>
 
     @forelse($grouped as $deptName => $people)
-    <section class="space-y-2">
-        <h3 class="text-[11px] font-bold uppercase tracking-widest text-on-surface flex items-center gap-2">
-            <span class="material-symbols-outlined text-base">domain</span> {{ $deptName }}
-            <span class="text-on-surface-variant font-normal">({{ $people->count() }})</span>
+    <section class="space-y-3">
+        <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-slate-500 flex items-center gap-1.5 border-b border-slate-200 pb-1.5">
+            <span class="material-symbols-outlined text-[16px] text-slate-400">domain</span>
+            <span>{{ $deptName }}</span>
+            <span class="text-slate-400 font-semibold">({{ $people->count() }})</span>
         </h3>
-        <div class="bg-white border border-outline-variant/20 rounded-sm divide-y divide-outline-variant/10">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             @foreach($people as $person)
             @php
                 $personAreas = $person->areaAssignments->map(fn($a) => $a->area)->filter();
             @endphp
-            <div class="grid grid-cols-12 items-start px-4 py-3 hover:bg-slate-50 transition-colors">
-                <div class="col-span-7">
-                    <p class="text-sm font-semibold text-inverse-surface">{{ $person->name }}</p>
-                    <p class="text-[10px] text-on-surface-variant uppercase">{{ $person->role }}</p>
-                    @if($personAreas->isEmpty())
-                        <p class="text-[10px] text-amber-600 mt-0.5">— Belum ada area aktif</p>
-                    @else
-                        <p class="text-[10px] text-on-surface-variant mt-0.5">{{ $personAreas->pluck('name')->implode(', ') }}</p>
-                    @endif
-                </div>
-                <div class="col-span-2 pt-1">
-                    @if($processedIds->contains($person->id))
-                    <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-green-700">
-                        <span class="material-symbols-outlined text-sm">check_circle</span> Sudah Isi
-                    </span>
-                    @else
-                    <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600">
-                        <span class="material-symbols-outlined text-sm">pending</span> Belum Isi
-                    </span>
-                    @endif
-                </div>
-                <div class="col-span-3 text-right flex flex-col items-end gap-1">
-                    @if(auth()->user()->isAdmin())
+            <div class="bg-white border border-slate-200 rounded-sm p-3.5 flex flex-col justify-between hover:border-slate-300 hover:shadow-sm transition-all">
+                <!-- Top: Person Info & Status -->
+                <div>
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <x-avatar class="w-6 h-6 rounded grayscale shrink-0" :name="$person->name ?? 'User'" background="f1f5f9" color="64748b"/>
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-800 uppercase tracking-tight truncate" title="{{ $person->name }}">{{ $person->name }}</p>
+                                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">{{ strtoupper($person->role) }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="shrink-0">
+                            @if($processedIds->contains($person->id))
+                                <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded">
+                                    <span class="material-symbols-outlined text-[11px]">check_circle</span> Sudah Isi
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 rounded">
+                                    <span class="material-symbols-outlined text-[11px]">pending</span> Belum Isi
+                                </span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Area Info -->
+                    <div class="mt-2 text-[10px] text-slate-500">
                         @if($personAreas->isEmpty())
-                            <span class="text-[10px] text-on-surface-variant italic">Tanpa area</span>
+                            <span class="text-amber-600 font-medium italic">— Belum ada area aktif</span>
                         @else
-                            @foreach($personAreas as $area)
-                                <a href="{{ route('daily-reports.create', ['person' => $person->id, 'date' => $date, 'area_id' => $area->id]) }}"
-                                   class="inline-block px-3 py-1 rounded-sm bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider hover:bg-primary hover:text-white transition-all">
-                                    {{ $processedIds->contains($person->id) ? 'Buka' : 'Isi' }}
-                                    @if($personAreas->count() > 1)
-                                        <span class="font-normal normal-case tracking-normal ml-0.5">{{ $area->name }}</span>
-                                    @endif
-                                </a>
-                            @endforeach
+                            <span class="font-medium text-slate-600 uppercase tracking-wide truncate block" title="{{ $personAreas->pluck('name')->implode(', ') }}">
+                                <span class="text-slate-400 font-normal">Area:</span> {{ $personAreas->pluck('name')->implode(', ') }}
+                            </span>
                         @endif
-                    @endif
+                    </div>
+                </div>
+
+                <!-- Bottom: Rencana Count & Action Button -->
+                <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 text-[11px]">
+                        <span class="text-slate-400 font-medium text-[10px] uppercase tracking-wider">Rencana</span>
+                        <span class="font-bold tabular-nums text-xs {{ ($planCounts[$person->id] ?? 0) > 0 ? 'text-slate-800' : 'text-slate-400' }}">
+                            {{ $planCounts[$person->id] ?? 0 }}
+                        </span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-1">
+                        @if(auth()->user()->isAdmin())
+                            @if($personAreas->isEmpty())
+                                <span class="text-[10px] text-slate-400 italic">Tanpa area</span>
+                            @else
+                                @foreach($personAreas as $area)
+                                    <a href="{{ route('daily-reports.create', ['person' => $person->id, 'date' => $date, 'area_id' => $area->id]) }}"
+                                       class="inline-flex items-center gap-0.5 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm {{ $processedIds->contains($person->id) ? 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-primary text-white hover:bg-primary/95' }}">
+                                        {{ $processedIds->contains($person->id) ? 'Buka' : 'Isi' }}
+                                        @if($personAreas->count() > 1)
+                                            <span class="font-semibold text-[9px] opacity-80 ml-0.5">({{ $area->name }})</span>
+                                        @endif
+                                    </a>
+                                @endforeach
+                            @endif
+                        @endif
+                    </div>
                 </div>
             </div>
             @endforeach
         </div>
     </section>
     @empty
-    <div class="p-8 text-center text-on-surface-variant italic text-sm">Tidak ada pelapor yang diharapkan.</div>
-    @endforelse>
+    <div class="p-8 text-center text-slate-400 italic text-sm">Tidak ada pelapor yang diharapkan.</div>
+    @endforelse
 </div>
-
 @endsection

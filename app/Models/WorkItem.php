@@ -36,6 +36,7 @@ class WorkItem extends Model
         'carried_from_id',
         'source_daily_report_id',
         'weekly_plan_id',
+        'proof_of_work_url',
         'work_type',
         'created_by',
         'updated_by',

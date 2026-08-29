@@ -87,6 +87,7 @@ class StoreDailyReportRequest extends FormRequest
             'work_items.*.planned_start_date' => 'required|date',
             'work_items.*.planned_end_date' => 'required|date',
             'work_items.*.weekly_plan_id' => 'nullable|exists:weekly_plans,id',
+            'work_items.*.proof_of_work_url' => 'nullable|url|max:2048',
             'work_items.*.status' => 'nullable|string|in:not_started,in_progress,blocked,completed,cancelled',
         ];
     }

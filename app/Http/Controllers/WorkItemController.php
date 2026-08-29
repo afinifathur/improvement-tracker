@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\WeeklyPlan;
 use App\Models\WorkItem;
 use App\Models\WorkItemScheduleChange;
+use App\Services\WorkingDayService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -46,8 +47,7 @@ class WorkItemController extends Controller
 
         $classifiedKpiItems = $kpiItems->map(function ($item) use ($date) {
             $start = $item->planned_start_date->toDateString();
-            $end = $item->planned_end_date->toDateString();
-            if ($end < $date) {
+            if (WorkingDayService::isOverdueOn($item->planned_end_date, $date)) {
                 $item->classification = 'overdue';
             } elseif ($start > $date) {
                 $item->classification = 'future';
@@ -78,11 +78,10 @@ class WorkItemController extends Controller
         // Classify display items relative to selected date D
         $classifiedItems = $workItems->map(function ($item) use ($date) {
             $start = $item->planned_start_date->toDateString();
-            $end = $item->planned_end_date->toDateString();
 
             if (in_array($item->status->value, ['completed', 'cancelled'])) {
                 $item->classification = 'historical';
-            } elseif ($end < $date) {
+            } elseif (WorkingDayService::isOverdueOn($item->planned_end_date, $date)) {
                 $item->classification = 'overdue';
             } elseif ($start > $date) {
                 $item->classification = 'future';
@@ -265,8 +264,28 @@ class WorkItemController extends Controller
             $baseQuery->where('status', $request->input('status'));
         }
 
-        $workItems = $baseQuery->get();
         $refDate = $date ?: now()->toDateString();
+
+        $threshold = WorkingDayService::overdueThresholdDate($refDate);
+        if ($threshold !== null) {
+            $safeThreshold = addslashes($threshold);
+            $rankSql = "CASE 
+                WHEN status IN ('not_started', 'in_progress', 'blocked') AND date(planned_end_date) <= '{$safeThreshold}' THEN 1
+                WHEN status IN ('not_started', 'in_progress', 'blocked') THEN 2
+                ELSE 3
+            END";
+        } else {
+            $rankSql = "CASE 
+                WHEN status IN ('not_started', 'in_progress', 'blocked') THEN 1
+                ELSE 2
+            END";
+        }
+
+        $workItems = $baseQuery
+            ->orderByRaw("{$rankSql} ASC")
+            ->orderByDesc('planned_end_date')
+            ->orderByDesc('id')
+            ->get();
 
         $kpiQuery = $this->buildBaseQuery($request);
         if ($date) {
@@ -285,12 +304,12 @@ class WorkItemController extends Controller
                 $item->classification = 'blocked';
             } elseif ($item->status->value === 'cancelled') {
                 $item->classification = 'cancelled';
-            } elseif ($end < $refDate) {
+            } elseif (WorkingDayService::isOverdueOn($item->planned_end_date, $refDate)) {
                 $item->classification = 'overdue';
-            } elseif ($start <= $refDate && $end >= $refDate) {
-                $item->classification = 'current';
-            } else {
+            } elseif ($start > $refDate) {
                 $item->classification = 'upcoming';
+            } else {
+                $item->classification = 'current';
             }
 
             return $item;
@@ -313,12 +332,12 @@ class WorkItemController extends Controller
                 $item->classification = 'blocked';
             } elseif ($item->status->value === 'cancelled') {
                 $item->classification = 'cancelled';
-            } elseif ($end < $refDate) {
+            } elseif (WorkingDayService::isOverdueOn($item->planned_end_date, $refDate)) {
                 $item->classification = 'overdue';
-            } elseif ($start <= $refDate && $end >= $refDate) {
-                $item->classification = 'current';
-            } else {
+            } elseif ($start > $refDate) {
                 $item->classification = 'upcoming';
+            } else {
+                $item->classification = 'current';
             }
 
             return $item;
@@ -348,7 +367,7 @@ class WorkItemController extends Controller
 
         $inProgressCount = $workItems->count();
         $dueTodayCount = $workItems->filter(fn ($item) => $item->planned_end_date->toDateString() === $refDate)->count();
-        $overdueCount = $workItems->filter(fn ($item) => $item->planned_end_date->toDateString() < $refDate)->count();
+        $overdueCount = $workItems->filter(fn ($item) => WorkingDayService::isOverdueOn($item->planned_end_date, $refDate))->count();
         $blockedCount = $this->buildBaseQuery($request)->where('status', 'blocked')->count();
 
         $summary = [
@@ -360,7 +379,7 @@ class WorkItemController extends Controller
 
         $classifiedItems = $workItems->map(function ($item) use ($refDate) {
             $end = $item->planned_end_date->toDateString();
-            if ($end < $refDate) {
+            if (WorkingDayService::isOverdueOn($item->planned_end_date, $refDate)) {
                 $item->classification = 'overdue';
             } elseif ($end === $refDate) {
                 $item->classification = 'due_today';
@@ -389,20 +408,35 @@ class WorkItemController extends Controller
         $users = User::orderBy('name')->get();
 
         $refDate = now()->toDateString();
+        $threshold = WorkingDayService::overdueThresholdDate($refDate);
 
         $baseQuery = $this->buildBaseQuery($request)
-            ->where('planned_end_date', '<', $refDate)
             ->whereNotIn('status', ['completed', 'cancelled']);
+
+        if ($threshold !== null) {
+            $baseQuery->whereDate('planned_end_date', '<=', $threshold);
+        } else {
+            $baseQuery->whereRaw('0 = 1');
+        }
 
         if ($request->filled('status')) {
             $baseQuery->where('status', $request->input('status'));
         }
 
-        $workItems = $baseQuery->get();
+        $workItems = $baseQuery
+            ->orderByDesc('planned_end_date')
+            ->orderByDesc('id')
+            ->get();
 
         $kpiQuery = $this->buildBaseQuery($request)
-            ->where('planned_end_date', '<', $refDate)
             ->whereNotIn('status', ['completed', 'cancelled']);
+
+        if ($threshold !== null) {
+            $kpiQuery->whereDate('planned_end_date', '<=', $threshold);
+        } else {
+            $kpiQuery->whereRaw('0 = 1');
+        }
+
         $kpiItems = $kpiQuery->get();
 
         $summary = [
@@ -415,7 +449,7 @@ class WorkItemController extends Controller
         $classifiedItems = $workItems->map(function ($item) use ($refDate) {
             $end = Carbon::parse($item->planned_end_date);
             $today = Carbon::parse($refDate);
-            $item->days_overdue = $end->diffInDays($today);
+            $item->days_overdue = (int) $end->diffInDays($today);
 
             return $item;
         });
@@ -445,7 +479,10 @@ class WorkItemController extends Controller
             $baseQuery->where('planned_end_date', $date);
         }
 
-        $workItems = $baseQuery->get();
+        $workItems = $baseQuery
+            ->orderByRaw('COALESCE(completed_at, planned_end_date) DESC')
+            ->orderByDesc('id')
+            ->get();
 
         $summary = [
             'completed' => $workItems->count(),
@@ -498,7 +535,27 @@ class WorkItemController extends Controller
             $summary = $this->workloadSummary((clone $baseQuery)->get());
 
             $this->applyStatusTab($baseQuery, $request);
-            $workItems = $baseQuery->get();
+
+            $threshold = WorkingDayService::overdueThresholdDate(now());
+            if ($threshold !== null) {
+                $safeThreshold = addslashes($threshold);
+                $rankSql = "CASE 
+                    WHEN status IN ('not_started', 'in_progress', 'blocked') AND date(planned_end_date) <= '{$safeThreshold}' THEN 1
+                    WHEN status IN ('not_started', 'in_progress', 'blocked') THEN 2
+                    ELSE 3
+                END";
+            } else {
+                $rankSql = "CASE 
+                    WHEN status IN ('not_started', 'in_progress', 'blocked') THEN 1
+                    ELSE 2
+                END";
+            }
+
+            $workItems = $baseQuery
+                ->orderByRaw("{$rankSql} ASC")
+                ->orderByDesc('planned_end_date')
+                ->orderByDesc('id')
+                ->get();
 
             return view('work-items.person', [
                 'departments' => $departments,
@@ -656,14 +713,14 @@ class WorkItemController extends Controller
 
     private function workloadCounts($items): array
     {
-        $today = now()->toDateString();
+        $now = now();
         $activeStatuses = ['not_started', 'in_progress', 'blocked'];
 
         return [
             'open' => $items->where('status.value', 'not_started')->count(),
             'in_progress' => $items->where('status.value', 'in_progress')->count(),
             'active' => $items->whereIn('status.value', $activeStatuses)->count(),
-            'overdue' => $items->filter(fn ($item) => in_array($item->status->value, $activeStatuses) && $item->planned_end_date->toDateString() < $today)->count(),
+            'overdue' => $items->filter(fn ($item) => in_array($item->status->value, $activeStatuses) && WorkingDayService::isOverdueOn($item->planned_end_date, $now))->count(),
             'blocked' => $items->where('status.value', 'blocked')->count(),
             'completed' => $items->where('status.value', 'completed')->count(),
         ];

@@ -54,7 +54,15 @@ class DailyReportController extends Controller
                 ->count(),
         ];
 
-        return view('daily-reports.index', compact('date', 'grouped', 'processedIds', 'reports', 'summary'));
+        // Count daily work items / plans for each reporter on selected date (single aggregate query, no N+1)
+        $planCounts = WorkItem::whereDate('planned_start_date', '<=', $date)
+            ->whereDate('planned_end_date', '>=', $date)
+            ->where('status', '!=', 'cancelled')
+            ->selectRaw('owner_id, count(*) as count')
+            ->groupBy('owner_id')
+            ->pluck('count', 'owner_id');
+
+        return view('daily-reports.index', compact('date', 'grouped', 'processedIds', 'reports', 'summary', 'planCounts'));
     }
 
     public function getDailyReportOptions(Request $request, User $user)
@@ -80,11 +88,79 @@ class DailyReportController extends Controller
             ->whereDate('week_start_date', $weekStart)
             ->get();
 
+        // Check if an existing report exists for this user and date
+        $existingReport = DailyReport::where('reported_by', $user->id)
+            ->whereDate('report_date', $date)
+            ->with(['workItems', 'area'])
+            ->first();
+
+        $existingReportData = null;
+        if ($existingReport) {
+            $existingReportData = [
+                'id' => $existingReport->id,
+                'report_date' => $existingReport->report_date->toDateString(),
+                'area_id' => $existingReport->area_id,
+                'area_name' => $existingReport->area?->name ?? ($existingReport->area_id ? 'Area #' . $existingReport->area_id : 'Tanpa Area'),
+                'today_result' => $existingReport->today_result,
+                'edit_url' => route('daily-reports.edit', $existingReport),
+                'update_url' => route('daily-reports.update', $existingReport),
+                'work_items' => $existingReport->workItems->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'description' => $item->description,
+                        'weekly_plan_id' => $item->weekly_plan_id,
+                        'planned_start_date' => $item->planned_start_date?->toDateString(),
+                        'planned_end_date' => $item->planned_end_date?->toDateString(),
+                        'proof_of_work_url' => $item->proof_of_work_url,
+                        'status' => $item->status->value,
+                    ];
+                })->values(),
+            ];
+        }
+
         return response()->json([
             'areas' => $activeAreas->map(fn($a) => ['id' => $a->id, 'name' => $a->name]),
             'has_active_assignments' => $hasActiveAssignments,
             'weekly_plans' => $weeklyPlans->map(fn($p) => ['id' => $p->id, 'title' => $p->title]),
+            'existing_report' => $existingReportData,
         ]);
+    }
+
+    public function navigate(Request $request)
+    {
+        $date = $this->resolveDate($request->query('date'));
+        $personId = $request->query('person');
+        $areaId = $request->query('area_id');
+
+        if ($personId) {
+            $query = DailyReport::where('reported_by', $personId)
+                ->whereDate('report_date', $date);
+
+            if ($areaId) {
+                $query->where('area_id', $areaId);
+            }
+
+            $report = $query->first();
+
+            if (! $report && $areaId) {
+                $report = DailyReport::where('reported_by', $personId)
+                    ->whereDate('report_date', $date)
+                    ->first();
+            }
+
+            if ($report) {
+                return redirect()->route('daily-reports.edit', $report);
+            }
+
+            return redirect()->route('daily-reports.create', [
+                'person' => $personId,
+                'date' => $date,
+                'area_id' => $areaId,
+            ]);
+        }
+
+        return redirect()->route('daily-reports.index', ['date' => $date]);
     }
 
     public function create(Request $request)
@@ -125,14 +201,18 @@ class DailyReportController extends Controller
             ->whereDate('report_date', $request->report_date)
             ->first();
 
-        if ($existing) {
-            return redirect()->route('daily-reports.edit', $existing)
-                ->with('status', 'Laporan harian untuk personel, area, dan tanggal ini sudah ada.');
-        }
-
         $data = $request->validated();
         $data['department_id'] = $area->department_id ?? $person->department_id;
         $data['work_items'] = $request->input('work_items', []);
+
+        if ($existing) {
+            if (empty($data['today_result']) && !empty($existing->today_result)) {
+                $data['today_result'] = $existing->today_result;
+            }
+            $report = $this->service->update($existing, $data, auth()->id());
+            return redirect()->route('daily-reports.index', ['date' => $report->report_date->toDateString()])
+                ->with('status', 'Pekerjaan baru berhasil ditambahkan ke laporan harian.');
+        }
 
         try {
             $report = $this->service->store($data, auth()->id());
@@ -143,8 +223,12 @@ class DailyReportController extends Controller
                 ->first();
 
             if ($existing) {
-                return redirect()->route('daily-reports.edit', $existing)
-                    ->with('status', 'Laporan harian untuk personel, area, dan tanggal ini sudah ada.');
+                if (empty($data['today_result']) && !empty($existing->today_result)) {
+                    $data['today_result'] = $existing->today_result;
+                }
+                $report = $this->service->update($existing, $data, auth()->id());
+                return redirect()->route('daily-reports.index', ['date' => $report->report_date->toDateString()])
+                    ->with('status', 'Pekerjaan baru berhasil ditambahkan ke laporan harian.');
             }
 
             throw $e;

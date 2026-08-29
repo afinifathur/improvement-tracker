@@ -125,14 +125,15 @@
                             <tbody>
                                 @foreach($areaItems as $item)
                                     @php
-                                        $todayStr = now()->toDateString();
-                                        $isOverdue = $item->planned_end_date->toDateString() < $todayStr;
-                                        $isDueToday = $item->planned_end_date->toDateString() === $todayStr;
+                                        $isOverdue = ($item->classification ?? '') === 'overdue';
+                                        $isDueToday = ($item->classification ?? '') === 'due_today';
                                         
-                                        // Days active calculation
+                                        // Days active calculation (integer days from start date to today)
+                                        $todayCarbon = now()->startOfDay();
+                                        $startCarbon = $item->planned_start_date ? $item->planned_start_date->copy()->startOfDay() : null;
                                         $daysActive = 0;
-                                        if ($item->planned_start_date->toDateString() <= $todayStr) {
-                                            $daysActive = $item->planned_start_date->diffInDays(now()) + 1;
+                                        if ($startCarbon && $startCarbon <= $todayCarbon) {
+                                            $daysActive = (int) $startCarbon->diffInDays($todayCarbon) + 1;
                                         }
                                     @endphp
                                     <tr class="{{ $isOverdue ? 'bg-red-50/20' : '' }}">
@@ -174,7 +175,7 @@
                                             <span class="text-slate-500 text-[10px] {{ $isOverdue ? 'text-red-600 font-semibold' : '' }}">{{ $item->planned_end_date ? $item->planned_end_date->format('d M Y') : '-' }}</span>
                                         </td>
                                         <td class="text-center font-bold text-slate-700">
-                                            {{ $daysActive }} <span class="text-[9px] font-medium text-slate-400">d</span>
+                                            {{ $daysActive }} <span class="text-[9px] font-medium text-slate-400">Hari</span>
                                         </td>
                                         <td>
                                             <span class="text-slate-500 text-[10px]">{{ $item->updated_at ? $item->updated_at->format('d M Y') : '-' }}</span>
@@ -222,14 +223,15 @@
                         <tbody>
                             @foreach($unassignedItems as $item)
                                 @php
-                                    $todayStr = now()->toDateString();
-                                    $isOverdue = $item->planned_end_date->toDateString() < $todayStr;
-                                    $isDueToday = $item->planned_end_date->toDateString() === $todayStr;
+                                    $isOverdue = ($item->classification ?? '') === 'overdue';
+                                    $isDueToday = ($item->classification ?? '') === 'due_today';
                                     
-                                    // Days active calculation
+                                    // Days active calculation (integer days from start date to today)
+                                    $todayCarbon = now()->startOfDay();
+                                    $startCarbon = $item->planned_start_date ? $item->planned_start_date->copy()->startOfDay() : null;
                                     $daysActive = 0;
-                                    if ($item->planned_start_date->toDateString() <= $todayStr) {
-                                        $daysActive = $item->planned_start_date->diffInDays(now()) + 1;
+                                    if ($startCarbon && $startCarbon <= $todayCarbon) {
+                                        $daysActive = (int) $startCarbon->diffInDays($todayCarbon) + 1;
                                     }
                                 @endphp
                                 <tr class="{{ $isOverdue ? 'bg-red-50/20' : '' }}">
@@ -271,7 +273,7 @@
                                         <span class="text-slate-500 text-[10px] {{ $isOverdue ? 'text-red-600 font-semibold' : '' }}">{{ $item->planned_end_date ? $item->planned_end_date->format('d M Y') : '-' }}</span>
                                     </td>
                                     <td class="text-center font-bold text-slate-700">
-                                        {{ $daysActive }} <span class="text-[9px] font-medium text-slate-400">d</span>
+                                        {{ $daysActive }} <span class="text-[9px] font-medium text-slate-400">Hari</span>
                                     </td>
                                     <td>
                                         <span class="text-slate-500 text-[10px]">{{ $item->updated_at ? $item->updated_at->format('d M Y') : '-' }}</span>

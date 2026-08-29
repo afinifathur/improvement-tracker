@@ -96,6 +96,7 @@ class DailyReportService
                     'planned_start_date' => $start,
                     'planned_end_date' => $end,
                     'weekly_plan_id' => $item['weekly_plan_id'] ?? null,
+                    'proof_of_work_url' => !empty($item['proof_of_work_url']) ? trim($item['proof_of_work_url']) : null,
                     'status' => $status,
                     'updated_by' => $actorId,
                 ], $timestamps);
@@ -114,6 +115,7 @@ class DailyReportService
                     'planned_end_date' => $end,
                     'source_daily_report_id' => $report->id,
                     'weekly_plan_id' => $item['weekly_plan_id'] ?? null,
+                    'proof_of_work_url' => !empty($item['proof_of_work_url']) ? trim($item['proof_of_work_url']) : null,
                     'status' => $status,
                     'created_by' => $actorId,
                     'updated_by' => $actorId,

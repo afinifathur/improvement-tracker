@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IssueController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeeklyPlanController;
 use App\Http\Controllers\WorkItemController;
 use Illuminate\Support\Facades\Route;
@@ -34,13 +35,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/work-items/{item}/extend', [WorkItemController::class, 'extend'])->name('work-items.extend');
     });
 
-    // Admin Only (Operational)
+    // Admin Only (Operational & User Management)
     Route::middleware(['role:admin'])->group(function () {
+        Route::resource('users', UserController::class)->except(['show', 'destroy']);
+        Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate'])->name('users.deactivate');
+        Route::post('/users/{user}/reactivate', [UserController::class, 'reactivate'])->name('users.reactivate');
+
         Route::get('/weekly-plan/create', [WeeklyPlanController::class, 'create'])->name('weekly-plans.create');
         Route::get('/weekly-plan/closing', [WeeklyPlanController::class, 'closing'])->name('weekly-plans.closing');
         Route::post('/api/weekly-plans', [WeeklyPlanController::class, 'store'])->name('api.weekly-plans.store');
         Route::patch('/api/weekly-plans/{plan}/status', [WeeklyPlanController::class, 'updateStatus'])->name('api.weekly-plans.update-status');
 
+        Route::get('/daily-reports/navigate', [DailyReportController::class, 'navigate'])->name('daily-reports.navigate');
         Route::get('/daily-reports/create', [DailyReportController::class, 'create'])->name('daily-reports.create');
         Route::post('/daily-reports', [DailyReportController::class, 'store'])->name('daily-reports.store');
         Route::get('/daily-reports/{report}/edit', [DailyReportController::class, 'edit'])->name('daily-reports.edit');

@@ -247,7 +247,8 @@ class WorkItemViewsTest extends TestCase
 
     public function test_overdue_view_rules_and_lateness_calculation(): void
     {
-        $yesterday = now()->subDay()->toDateString();
+        // 3 working days ago to ensure it is past the 2 working-day grace period
+        $overdueDeadline = \App\Services\WorkingDayService::subWorkingDays(now(), 3)->toDateString();
         $today = now()->toDateString();
 
         // 1. overdue not_started
@@ -256,10 +257,10 @@ class WorkItemViewsTest extends TestCase
             'owner_id' => $this->spv->id,
             'department_id' => $this->deptA->id,
             'area_id' => $this->areaA->id,
-            'original_start_date' => $yesterday,
-            'original_end_date' => $yesterday,
-            'planned_start_date' => $yesterday,
-            'planned_end_date' => $yesterday,
+            'original_start_date' => $overdueDeadline,
+            'original_end_date' => $overdueDeadline,
+            'planned_start_date' => $overdueDeadline,
+            'planned_end_date' => $overdueDeadline,
             'status' => 'not_started',
             'created_by' => $this->admin->id,
             'updated_by' => $this->admin->id,
@@ -271,10 +272,10 @@ class WorkItemViewsTest extends TestCase
             'owner_id' => $this->spv->id,
             'department_id' => $this->deptA->id,
             'area_id' => $this->areaA->id,
-            'original_start_date' => $yesterday,
-            'original_end_date' => $yesterday,
-            'planned_start_date' => $yesterday,
-            'planned_end_date' => $yesterday,
+            'original_start_date' => $overdueDeadline,
+            'original_end_date' => $overdueDeadline,
+            'planned_start_date' => $overdueDeadline,
+            'planned_end_date' => $overdueDeadline,
             'status' => 'in_progress',
             'created_by' => $this->admin->id,
             'updated_by' => $this->admin->id,
@@ -286,10 +287,10 @@ class WorkItemViewsTest extends TestCase
             'owner_id' => $this->spv->id,
             'department_id' => $this->deptA->id,
             'area_id' => $this->areaA->id,
-            'original_start_date' => $yesterday,
-            'original_end_date' => $yesterday,
-            'planned_start_date' => $yesterday,
-            'planned_end_date' => $yesterday,
+            'original_start_date' => $overdueDeadline,
+            'original_end_date' => $overdueDeadline,
+            'planned_start_date' => $overdueDeadline,
+            'planned_end_date' => $overdueDeadline,
             'status' => 'blocked',
             'created_by' => $this->admin->id,
             'updated_by' => $this->admin->id,
@@ -301,10 +302,10 @@ class WorkItemViewsTest extends TestCase
             'owner_id' => $this->spv->id,
             'department_id' => $this->deptA->id,
             'area_id' => $this->areaA->id,
-            'original_start_date' => $yesterday,
-            'original_end_date' => $yesterday,
-            'planned_start_date' => $yesterday,
-            'planned_end_date' => $yesterday,
+            'original_start_date' => $overdueDeadline,
+            'original_end_date' => $overdueDeadline,
+            'planned_start_date' => $overdueDeadline,
+            'planned_end_date' => $overdueDeadline,
             'status' => 'completed',
             'created_by' => $this->admin->id,
             'updated_by' => $this->admin->id,
@@ -337,7 +338,7 @@ class WorkItemViewsTest extends TestCase
         $this->assertTrue($flatItems->contains('id', $item3->id));
 
         // Validate "days_overdue" calculation
-        $this->assertEquals(1, $flatItems->first()->days_overdue);
+        $this->assertGreaterThanOrEqual(3, $flatItems->first()->days_overdue);
     }
 
     public function test_completed_view_only_shows_completed_items(): void

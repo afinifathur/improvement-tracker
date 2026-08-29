@@ -12,7 +12,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Set working directory to script location
+# Set working directory strictly to script / local Laravel project location
 $ProjectRoot = $PSScriptRoot
 if (-not $ProjectRoot) {
     $ProjectRoot = (Get-Location).Path
@@ -105,7 +105,7 @@ function Show-FatalError([string]$stage, [string]$reason, [string]$localDbStatus
 }
 
 # ============================================================
-# BINARY DETECTION
+# BINARY & ENVIRONMENT DETECTION
 # ============================================================
 
 Show-Header
@@ -139,8 +139,16 @@ if (-not (Get-Command "mysqldump" -ErrorAction SilentlyContinue)) {
     }
 }
 
+# Verify local target safety (must be localhost / 127.0.0.1)
+if ($LOCAL_DB_HOST -ne "127.0.0.1" -and $LOCAL_DB_HOST -ne "localhost" -and $LOCAL_DB_HOST -ne "::1") {
+    Show-FatalError -stage "Safety Pre-flight Check" `
+                    -reason "Local DB host '$LOCAL_DB_HOST' is not a local loopback address (127.0.0.1/localhost). Sync aborted for safety." `
+                    -localDbStatus "SAFE - No changes made."
+}
+
 Write-Host "Local MySQL CLI      : $mysqlPath" -ForegroundColor DarkGray
 Write-Host "Local mysqldump CLI  : $mysqldumpPath" -ForegroundColor DarkGray
+Write-Host "Local Project Root   : $ProjectRoot" -ForegroundColor DarkGray
 
 # ============================================================
 # DRY-RUN / READ-ONLY VERIFICATION
@@ -209,10 +217,10 @@ if ($DryRun) {
 }
 
 # ============================================================
-# [0/5] LOCAL SAFEGUARD BACKUP
+# [0/7] LOCAL SAFEGUARD BACKUP
 # ============================================================
 
-Show-StepHeader "0/5" "Creating LOCAL safeguard backup..."
+Show-StepHeader "0/7" "Creating LOCAL safeguard backup..."
 
 if (-not (Test-Path $LOCAL_BACKUP_DIR)) {
     New-Item -ItemType Directory -Path $LOCAL_BACKUP_DIR -Force | Out-Null
@@ -244,7 +252,7 @@ finally {
 }
 
 if ($dumpExit -ne 0 -or (-not (Test-Path $backupFilePath)) -or ((Get-Item $backupFilePath).Length -eq 0)) {
-    Show-FatalError -stage "[0/5] Local Safeguard Backup" `
+    Show-FatalError -stage "[0/7] Local Safeguard Backup" `
                     -reason "Failed to create local safeguard backup or backup file is empty." `
                     -localDbStatus "SAFE - Aborted before touching production or local data."
 }
@@ -253,10 +261,10 @@ $localBackupSize = [math]::Round(((Get-Item $backupFilePath).Length / 1KB), 2)
 Show-StepSuccess "Backup saved -> backups/$backupFileName ($localBackupSize KB)"
 
 # ============================================================
-# [1/5] CREATE PRODUCTION DUMP & GENERATE CHECKSUM
+# [1/7] CREATE PRODUCTION DUMP & GENERATE CHECKSUM
 # ============================================================
 
-Show-StepHeader "1/5" "Creating PRODUCTION database dump..."
+Show-StepHeader "1/7" "Creating PRODUCTION database dump..."
 
 # Read DB_PASSWORD securely on remote server without exposing to process table / CLI
 # Uses single-quoted here-string (@' ... '@) so PowerShell will NOT evaluate $ variables
@@ -292,7 +300,7 @@ catch {
 $remoteSha256 = if ($remoteOutput) { ($remoteOutput -split "`r?`n")[-1].Trim() } else { "" }
 
 if ($sshExit -ne 0 -or [string]::IsNullOrWhiteSpace($remoteSha256) -or $remoteSha256.Length -ne 64) {
-    Show-FatalError -stage "[1/5] Production Database Dump" `
+    Show-FatalError -stage "[1/7] Production Database Dump" `
                     -reason "Failed to execute production mysqldump or generate SHA256 on remote server." `
                     -localDbStatus "SAFE - Local database unchanged." `
                     -backupLocation $backupFilePath
@@ -301,10 +309,10 @@ if ($sshExit -ne 0 -or [string]::IsNullOrWhiteSpace($remoteSha256) -or $remoteSh
 Show-StepSuccess "Production dump created (Remote SHA256: $remoteSha256)"
 
 # ============================================================
-# [2/5] DOWNLOAD PRODUCTION DUMP & INTEGRITY CHECK
+# [2/7] DOWNLOAD PRODUCTION DUMP & INTEGRITY CHECK
 # ============================================================
 
-Show-StepHeader "2/5" "Downloading production dump..."
+Show-StepHeader "2/7" "Downloading production dump..."
 
 $scpSource = "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/${REMOTE_DUMP_FILE}"
 
@@ -317,7 +325,7 @@ catch {
 }
 
 if ($scpExit -ne 0 -or (-not (Test-Path $localDumpPath)) -or ((Get-Item $localDumpPath).Length -eq 0)) {
-    Show-FatalError -stage "[2/5] Download Production Dump" `
+    Show-FatalError -stage "[2/7] Download Production Dump" `
                     -reason "Failed to download production dump via SCP or downloaded file is empty." `
                     -localDbStatus "SAFE - Local database unchanged." `
                     -backupLocation $backupFilePath
@@ -326,7 +334,7 @@ if ($scpExit -ne 0 -or (-not (Test-Path $localDumpPath)) -or ((Get-Item $localDu
 # Verify SHA256 integrity
 $localSha256 = (Get-FileHash -Path $localDumpPath -Algorithm SHA256).Hash.ToLower()
 if ($localSha256 -ne $remoteSha256.ToLower()) {
-    Show-FatalError -stage "[2/5] Download Integrity Verification" `
+    Show-FatalError -stage "[2/7] Download Integrity Verification" `
                     -reason "SHA256 checksum mismatch! Remote: $remoteSha256 vs Local: $localSha256. Corrupted download." `
                     -localDbStatus "SAFE - Local database unchanged." `
                     -backupLocation $backupFilePath
@@ -336,10 +344,10 @@ $dumpSize = [math]::Round(((Get-Item $localDumpPath).Length / 1MB), 2)
 Show-StepSuccess "Downloaded and verified $LOCAL_DUMP_FILE ($dumpSize MB - Checksum OK)"
 
 # ============================================================
-# [3/5] IMPORT INTO LOCAL DATABASE
+# [3/7] IMPORT INTO LOCAL DATABASE
 # ============================================================
 
-Show-StepHeader "3/5" "Importing production database into LOCAL ($LOCAL_DB_NAME)..."
+Show-StepHeader "3/7" "Importing production database into LOCAL ($LOCAL_DB_NAME)..."
 
 $prevPwd = $env:MYSQL_PWD
 $env:MYSQL_PWD = $LOCAL_DB_PASS
@@ -371,22 +379,75 @@ if ($importExit -ne 0) {
         "Unknown MySQL error."
     }
 
-    Show-FatalError -stage "[3/5] Import Local Database" `
+    Show-FatalError -stage "[3/7] Import Local Database" `
                     -reason "Failed to import dump into local MySQL database '$LOCAL_DB_NAME' (Exit Code: $importExit).`n`nMySQL Output / Error:`n  $sanitizedDetails" `
                     -localDbStatus "WARNING - Import interrupted / partially completed. Use local backup to restore." `
                     -backupLocation $backupFilePath
 }
 
-Show-StepSuccess "Database '$LOCAL_DB_NAME' updated with production data."
+Show-StepSuccess "Database '$LOCAL_DB_NAME' updated with production data & schema."
 
 # ============================================================
-# [4/5] CLEAR LOCAL LARAVEL CACHE
+# [4/7] RUN LOCAL PENDING MIGRATIONS
 # ============================================================
 
-Show-StepHeader "4/5" "Clearing LOCAL Laravel cache..."
+Show-StepHeader "4/7" "Applying LOCAL pending migrations..."
 
 try {
-    php artisan optimize:clear
+    $migrateOutput = & php artisan migrate --force 2>&1
+    $migrateExit = $LASTEXITCODE
+}
+catch {
+    $migrateExit = 1
+    $migrateOutput = $_.Exception.Message
+}
+
+if ($migrateExit -ne 0) {
+    Show-FatalError -stage "[4/7] Run Local Migrations" `
+                    -reason "Failed to execute 'php artisan migrate --force' on local database.`n`nArtisan Output:`n  $($migrateOutput -join "`n  ")" `
+                    -localDbStatus "WARNING - Production data imported, but local migrations failed to apply." `
+                    -backupLocation $backupFilePath
+}
+
+Show-StepSuccess "Local migrations executed successfully."
+if ($migrateOutput) {
+    $migrateOutput | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+}
+
+# ============================================================
+# [5/7] VERIFY LOCAL MIGRATION STATE
+# ============================================================
+
+Show-StepHeader "5/7" "Verifying local database migration state..."
+
+try {
+    $statusOutput = & php artisan migrate:status 2>&1
+    $statusExit = $LASTEXITCODE
+}
+catch {
+    $statusExit = 1
+    $statusOutput = $_.Exception.Message
+}
+
+$hasPending = $statusOutput | Where-Object { $_ -match "Pending" }
+
+if ($statusExit -ne 0 -or $hasPending) {
+    Show-FatalError -stage "[5/7] Verify Migration State" `
+                    -reason "Pending migrations still detected after migration step.`n`nStatus Output:`n  $($statusOutput -join "`n  ")" `
+                    -localDbStatus "WARNING - Migration state inconsistent." `
+                    -backupLocation $backupFilePath
+}
+
+Show-StepSuccess "All local migrations are fully applied (No pending migrations)."
+
+# ============================================================
+# [6/7] CLEAR LOCAL LARAVEL CACHE
+# ============================================================
+
+Show-StepHeader "6/7" "Clearing LOCAL Laravel cache..."
+
+try {
+    $cacheOutput = & php artisan optimize:clear 2>&1
     $artisanExit = $LASTEXITCODE
 }
 catch {
@@ -401,10 +462,10 @@ else {
 }
 
 # ============================================================
-# [5/5] CLEANUP TEMPORARY FILES
+# [7/7] CLEANUP TEMPORARY FILES & FINAL VERIFICATION
 # ============================================================
 
-Show-StepHeader "5/5" "Cleaning temporary files..."
+Show-StepHeader "7/7" "Cleaning temporary files & verifying environment..."
 
 # Clean remote temporary file safely (strictly targeted)
 try {
@@ -419,6 +480,21 @@ if (Test-Path $localDumpPath) {
     Remove-Item $localDumpPath -Force -ErrorAction SilentlyContinue
 }
 
+# Verify Laravel application boots cleanly
+try {
+    $bootCheck = & php artisan about --only=environment 2>&1
+    $bootExit = $LASTEXITCODE
+}
+catch {
+    $bootExit = 1
+}
+
+if ($bootExit -ne 0) {
+    Write-Host "  -> WARNING: Application boot check failed. Please check local .env configuration." -ForegroundColor Yellow
+} else {
+    Show-StepSuccess "Application boot & database connection verified."
+}
+
 Show-StepSuccess "Temporary dump files removed. Local safeguard backup preserved:"
 Write-Host "  -> $backupFilePath" -ForegroundColor DarkCyan
 
@@ -430,5 +506,9 @@ Write-Host ""
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host "   IMPROVEMENT TRACKER DATABASE SYNC COMPLETE     " -ForegroundColor Green
 Write-Host "               PRODUCTION -> LOCAL                " -ForegroundColor Green
+Write-Host "==================================================" -ForegroundColor Green
+Write-Host "Production Data : Synced" -ForegroundColor DarkGreen
+Write-Host "Local Schema    : Up-to-date with all migrations" -ForegroundColor DarkGreen
+Write-Host "Local Status    : READY" -ForegroundColor DarkGreen
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host ""
