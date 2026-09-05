@@ -26,6 +26,7 @@ services:
     volumes:
       - app-storage:/var/www/html/storage/app/public
       - app-public:/var/www/html/public
+      - improvement-tracker_reports:/var/www/html/storage/app/reports
     depends_on:
       db:
         condition: service_healthy
@@ -75,3 +76,5 @@ volumes:
   dbdata:
   app-storage:
   app-public:
+  improvement-tracker_reports:
+    name: improvement-tracker_reports

@@ -52,6 +52,7 @@ RUN mkdir -p storage/framework/cache \
              storage/framework/views \
              storage/logs \
              storage/app/public \
+             storage/app/reports \
     && chown -R www-data:www-data storage bootstrap/cache public public-seed
 
 USER www-data
