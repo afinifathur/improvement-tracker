@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\WeeklyPlan;
 use App\Models\WorkItem;
+use App\Services\ComplianceService;
 use App\Services\WorkingDayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(private ComplianceService $complianceService) {}
     /**
      * Management Control & Diagnostic Dashboard
      */
@@ -423,61 +425,6 @@ class DashboardController extends Controller
 
     private function calculateCompliance($personnel, array $submittedUserIds): array
     {
-        $pairs = config('reporting.temporary_reporting_pairs', []);
-
-        $personnelByEmail = [];
-        foreach ($personnel as $user) {
-            $personnelByEmail[strtolower(trim($user->email))] = $user;
-        }
-
-        $processedUserIds = [];
-        $totalObligations = 0;
-        $submittedObligations = 0;
-        $missing = collect();
-
-        foreach ($pairs as $pair) {
-            $emailA = strtolower(trim($pair[0] ?? ''));
-            $emailB = strtolower(trim($pair[1] ?? ''));
-
-            if (isset($personnelByEmail[$emailA]) && isset($personnelByEmail[$emailB])) {
-                $userA = $personnelByEmail[$emailA];
-                $userB = $personnelByEmail[$emailB];
-
-                $processedUserIds[$userA->id] = true;
-                $processedUserIds[$userB->id] = true;
-
-                $totalObligations += 1;
-
-                $submittedA = in_array($userA->id, $submittedUserIds);
-                $submittedB = in_array($userB->id, $submittedUserIds);
-
-                if ($submittedA || $submittedB) {
-                    $submittedObligations += 1;
-                } else {
-                    $missing->push("{$userA->name} / {$userB->name}");
-                }
-            }
-        }
-
-        foreach ($personnel as $user) {
-            if (isset($processedUserIds[$user->id])) {
-                continue;
-            }
-
-            $totalObligations += 1;
-
-            if (in_array($user->id, $submittedUserIds)) {
-                $submittedObligations += 1;
-            } else {
-                $missing->push($user->name);
-            }
-        }
-
-        return [
-            'total' => $totalObligations,
-            'submitted' => $submittedObligations,
-            'percent' => $totalObligations > 0 ? (int) round(($submittedObligations / $totalObligations) * 100) : 0,
-            'missing' => $missing,
-        ];
+        return $this->complianceService->calculateCompliance($personnel, $submittedUserIds);
     }
 }
