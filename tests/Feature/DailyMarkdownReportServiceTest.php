@@ -59,6 +59,10 @@ class DailyMarkdownReportServiceTest extends TestCase
     public function test_generates_daily_snapshot_in_daily_mode(): void
     {
         Carbon::setTestNow('2026-09-05 10:00:00');
+        $targetFile = storage_path('app/reports/2026-09-05.md');
+        if (File::exists($targetFile)) {
+            File::delete($targetFile);
+        }
 
         // Create a daily report with associated work item
         $report = DailyReport::create([
@@ -103,6 +107,8 @@ class DailyMarkdownReportServiceTest extends TestCase
         $this->assertStringContainsString('Pemesinan jig komponen selesai 100%.', $content);
         $this->assertStringContainsString('Machining Housing Bushing', $content);
         $this->assertStringContainsString('https://photos.app.goo.gl/evidence123', $content);
+        $this->assertStringNotContainsString('Automated EOD', $content);
+        $this->assertStringNotContainsString('EOD snapshot', $content);
 
         // Cleanup
         File::delete($result['file_path']);
@@ -116,7 +122,50 @@ class DailyMarkdownReportServiceTest extends TestCase
 
         $this->assertEquals('RETROACTIVE_RECONSTRUCTION', $result['mode']);
         $this->assertStringContainsString('Snapshot Mode**: `RETROACTIVE_RECONSTRUCTION`', $result['content']);
-        $this->assertStringContainsString('Generated retroactively', $result['content']);
+        $this->assertStringContainsString('This snapshot is a retroactive reconstruction', $result['content']);
+
+        // Cleanup
+        File::delete($result['file_path']);
+    }
+
+    public function test_renders_plain_markdown_without_html_entities_for_quotes_and_special_chars(): void
+    {
+        Carbon::setTestNow('2026-09-05 10:00:00');
+
+        $report = DailyReport::create([
+            'report_date' => '2026-09-05',
+            'reported_by' => $this->user->id,
+            'area_id' => $this->area->id,
+            'department_id' => $this->department->id,
+            'today_result' => 'Narrative with 6" pipe & 2" flange <Test>',
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
+        ]);
+
+        WorkItem::create([
+            'title' => 'Cutting 1 1/2" Shaft & "Special" Bushing',
+            'owner_id' => $this->user->id,
+            'department_id' => $this->department->id,
+            'area_id' => $this->area->id,
+            'original_start_date' => '2026-09-05',
+            'original_end_date' => '2026-09-05',
+            'planned_start_date' => '2026-09-05',
+            'planned_end_date' => '2026-09-05',
+            'status' => WorkItemStatus::Completed,
+            'completed_at' => '2026-09-05 14:30:00',
+            'source_daily_report_id' => $report->id,
+            'work_type' => WorkType::Routine,
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
+        ]);
+
+        $result = $this->service->generate('2026-09-05', true);
+        $content = $result['content'];
+
+        $this->assertStringContainsString('6" pipe & 2" flange <Test>', $content);
+        $this->assertStringContainsString('Cutting 1 1/2" Shaft & "Special" Bushing', $content);
+        $this->assertStringNotContainsString('&quot;', $content);
+        $this->assertStringNotContainsString('&#039;', $content);
 
         // Cleanup
         File::delete($result['file_path']);
